@@ -1,0 +1,131 @@
+comments labeled 1800 qualifying 990 product mentions 1525 distinct names 852
+stance Counter({'positive': 732, 'recommend': 512, 'negative': 161, 'neutral': 120}) first_hand 1468 tenure 184 still_going 1049
+
+=== PER CATEGORY: score = positive - negative authors
+chairs (177 author-mentions):
+   Herman Miller aeron              n=65  +49 -9 =7 fh=61 3y+=14 maxY=22
+   Steelcase leap                   n=26  +24 -1 =1 fh=25 3y+=7 maxY=15
+   Herman Miller embody             n=9   +7 -2 =0 fh=9 3y+=0 maxY=1
+   Steelcase think                  n=5   +5 -0 =0 fh=5 3y+=3 maxY=12
+   Herman Miller mirra              n=10  +6 -2 =2 fh=9 3y+=1 maxY=4
+   Steelcase gesture                n=3   +3 -0 =0 fh=2 3y+=0 maxY=None
+desks (35 author-mentions):
+   GeekDesk                         n=5   +5 -0 =0 fh=4 3y+=0 maxY=2
+   IKEA fredrik                     n=2   +2 -0 =0 fh=2 3y+=0 maxY=None
+   Uplift standing desk             n=2   +2 -0 =0 fh=2 3y+=0 maxY=None
+   IKEA standing desk               n=2   +1 -0 =1 fh=2 3y+=1 maxY=3
+   Ergotron lx monitor mount        n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   Varidesk                         n=1   +1 -0 =0 fh=0 3y+=0 maxY=None
+monitors (26 author-mentions):
+   Apple thunderbolt display        n=2   +1 -0 =1 fh=2 3y+=0 maxY=None
+   Dell wqhd 34" ultrawide          n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   LG 43" 4k display                n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   LG 34um67                        n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   Dell monitor                     n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   Dell ultrasharp u2412m           n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+keyboards (111 author-mentions):
+   Unicomp model m                  n=5   +5 -0 =0 fh=5 3y+=0 maxY=None
+   Kinesis advantage                n=5   +3 -0 =2 fh=4 3y+=2 maxY=8
+   ZSA ergodox ez                   n=3   +3 -0 =0 fh=3 3y+=0 maxY=None
+   ErgoDox                          n=3   +3 -0 =0 fh=3 3y+=0 maxY=1
+   Kinesis advantage 2              n=3   +3 -0 =0 fh=3 3y+=0 maxY=None
+   ErgoDox ez                       n=3   +3 -0 =0 fh=3 3y+=0 maxY=None
+mice_trackpads (70 author-mentions):
+   Apple magic trackpad             n=8   +6 -1 =1 fh=8 3y+=0 maxY=None
+   Logitech mx ergo                 n=5   +5 -0 =0 fh=5 3y+=0 maxY=None
+   Logitech mx vertical             n=4   +4 -0 =0 fh=4 3y+=0 maxY=None
+   Evoluent verticalmouse           n=3   +3 -0 =0 fh=3 3y+=0 maxY=None
+   Apple magic mouse                n=4   +3 -1 =0 fh=3 3y+=0 maxY=None
+   Kensington expert mouse          n=2   +2 -0 =0 fh=2 3y+=0 maxY=None
+headphones (174 author-mentions):
+   Bose quietcomfort                n=28  +21 -5 =2 fh=26 3y+=0 maxY=None
+   Sony wh-1000xm                   n=9   +7 -1 =1 fh=9 3y+=0 maxY=None
+   Apple airpods pro                n=9   +6 -1 =2 fh=9 3y+=0 maxY=None
+   Apple airpods                    n=7   +4 -1 =2 fh=7 3y+=0 maxY=2
+   Sony mdr-7506                    n=4   +3 -0 =1 fh=4 3y+=0 maxY=None
+   Beyerdynamic dt770               n=3   +3 -0 =0 fh=2 3y+=0 maxY=None
+laptops (292 author-mentions):
+   Apple macbook pro                n=63  +43 -16 =4 fh=59 3y+=3 maxY=8
+   Apple macbook air                n=31  +27 -1 =3 fh=30 3y+=0 maxY=2
+   Thinkpad t-series                n=20  +15 -2 =3 fh=18 3y+=2 maxY=10
+   Apple macbook                    n=18  +12 -4 =2 fh=17 3y+=0 maxY=None
+   Thinkpad x1 carbon               n=16  +11 -3 =2 fh=14 3y+=1 maxY=5
+   Thinkpad x-series                n=12  +9 -2 =1 fh=10 3y+=1 maxY=6
+phones (36 author-mentions):
+   Apple iphone                     n=9   +7 -0 =2 fh=9 3y+=1 maxY=4
+   Google nexus                     n=3   +3 -0 =0 fh=1 3y+=0 maxY=None
+   Google pixel                     n=3   +1 -0 =2 fh=3 3y+=0 maxY=None
+   OnePlus 3t                       n=2   +1 -0 =1 fh=2 3y+=0 maxY=None
+   Lenovo s820                      n=1   +1 -0 =0 fh=1 3y+=0 maxY=0.3
+   Nokia 8810                       n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+tablets_ereaders (81 author-mentions):
+   Apple ipad                       n=13  +13 -0 =0 fh=12 3y+=1 maxY=4
+   Kobo                             n=12  +12 -0 =0 fh=12 3y+=1 maxY=5
+   Kindle                           n=19  +13 -3 =3 fh=19 3y+=1 maxY=10
+   Apple ipad pro                   n=9   +8 -0 =1 fh=8 3y+=0 maxY=None
+   Kindle paperwhite                n=8   +7 -1 =0 fh=8 3y+=0 maxY=None
+   reMarkable 2                     n=6   +3 -0 =3 fh=5 3y+=0 maxY=None
+kitchen_coffee (114 author-mentions):
+   AeroPress                        n=21  +20 -0 =1 fh=21 3y+=2 maxY=7
+   Zojirushi rice cooker            n=7   +7 -0 =0 fh=7 3y+=3 maxY=8
+   Instant Pot                      n=9   +6 -2 =1 fh=8 3y+=0 maxY=None
+   Bialetti moka                    n=4   +3 -0 =1 fh=4 3y+=1 maxY=20
+   Zojirushi neuro fuzzy rice cooke n=3   +3 -0 =0 fh=3 3y+=0 maxY=None
+   Vitamix                          n=2   +2 -0 =0 fh=2 3y+=0 maxY=None
+home_appliances (69 author-mentions):
+   iRobot roomba                    n=14  +9 -4 =1 fh=14 3y+=3 maxY=10
+   Amazon echo show 5               n=2   +2 -0 =0 fh=2 3y+=0 maxY=None
+   Roborock                         n=3   +2 -1 =0 fh=3 3y+=0 maxY=None
+   Luxe neo                         n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   Ecovacs deebot t9 plus           n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+   Wolf oven                        n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+tools_edc (76 author-mentions):
+   Leatherman wave                  n=5   +4 -0 =1 fh=5 3y+=0 maxY=None
+   Leatherman wingman               n=3   +3 -0 =0 fh=3 3y+=1 maxY=5
+   Leatherman skeletool             n=3   +3 -0 =0 fh=3 3y+=0 maxY=None
+   Leatherman                       n=3   +3 -0 =0 fh=3 3y+=1 maxY=20
+   Leatherman wave+                 n=2   +2 -0 =0 fh=2 3y+=1 maxY=20
+   Bosch sliding miter saw          n=1   +1 -0 =0 fh=1 3y+=0 maxY=None
+
+=== LONG-HAUL (positive owners 3+ years)
+  Herman Miller aeron              chairs       3y+=14 still=35 maxY=22 +49 -9
+  Steelcase leap                   chairs       3y+=7 still=18 maxY=15 +24 -1
+  Steelcase think                  chairs       3y+=3 still=3 maxY=12 +5 -0
+  Apple macbook pro                laptops      3y+=3 still=43 maxY=8 +43 -16
+  Zojirushi rice cooker            kitchen_coff 3y+=3 still=7 maxY=8 +7 -0
+  iRobot roomba                    home_applian 3y+=3 still=8 maxY=10 +9 -4
+  Kinesis advantage                keyboards    3y+=2 still=2 maxY=8 +3 -0
+  AeroPress                        kitchen_coff 3y+=2 still=17 maxY=7 +20 -0
+  Philips hue                      lighting_des 3y+=2 still=11 maxY=5 +10 -0
+  Thinkpad                         laptops      3y+=2 still=5 maxY=11 +6 -0
+  Thinkpad t-series                laptops      3y+=2 still=12 maxY=10 +15 -2
+  LifeSpan treadmill               fitness      3y+=2 still=3 maxY=4 +3 -0
+  Samsung series 9                 laptops      3y+=2 still=2 maxY=5 +2 -0
+  Herman Miller mirra              chairs       3y+=1 still=4 maxY=4 +6 -2
+  Zojirushi stainless insulated 16 kitchen_coff 3y+=1 still=0 maxY=6 +1 -0
+
+=== MOST NEGATIVE (n>=5)
+  Dell xps                         n=20 +9 -8
+  iRobot roomba                    n=14 +9 -4
+  Apple macbook pro                n=63 +43 -16
+  Herman Miller embody             n=9 +7 -2
+  Instant Pot                      n=9 +6 -2
+  Apple macbook                    n=18 +12 -4
+  Herman Miller mirra              n=10 +6 -2
+  Thinkpad x1 carbon               n=16 +11 -3
+  Bose quietcomfort                n=28 +21 -5
+  Thinkpad x-series                n=12 +9 -2
+
+=== MOST LOVED (n>=5, by Wilson)
+  AeroPress                        n=21 +20 -0 wilson=0.88
+  Apple macbook air                n=31 +27 -1 wilson=0.86
+  Steelcase leap                   n=26 +24 -1 wilson=0.84
+  Apple ipad                       n=13 +13 -0 wilson=0.83
+  Kobo                             n=12 +12 -0 wilson=0.82
+  Philips hue                      n=12 +10 -0 wilson=0.79
+  Herman Miller aeron              n=65 +49 -9 wilson=0.75
+  Apple ipad pro                   n=9 +8 -0 wilson=0.75
+  Apple iphone                     n=9 +7 -0 wilson=0.72
+  Zojirushi rice cooker            n=7 +7 -0 wilson=0.72
+
+singletons 714 of 852

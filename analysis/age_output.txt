@@ -1,0 +1,111 @@
+=== share of category author-mentions by era (top 5, % of named products in that era)
+chairs
+  2010-2015: Herman Miller Aeron 75%, Herman Miller Embody 11%, Steelcase Leap 9%, IKEA Markus 2%, HÅG Capisco 0%
+  2016-2020: Herman Miller Aeron 68%, Steelcase Leap 11%, Herman Miller Embody 11%, HÅG Capisco 3%, Steelcase Gesture 2%
+  2021-2023: Herman Miller Aeron 58%, Herman Miller Embody 14%, Steelcase Leap 12%, HÅG Capisco 4%, Secretlab 4%
+  2024-2026: Herman Miller Aeron 76%, Herman Miller Embody 15%, Steelcase Leap 6%, HÅG Capisco 0%, Secretlab 0%
+keyboards
+  2010-2015: IBM Model M 22%, Kinesis Advantage 21%, HHKB 17%, Das Keyboard 13%, Microsoft Natural/Sculpt 10%
+  2016-2020: ErgoDox 20%, Kinesis Advantage 16%, Apple Magic Keyboard 15%, IBM Model M 15%, HHKB 9%
+  2021-2023: ErgoDox 14%, Apple Magic Keyboard 14%, Kinesis Advantage 13%, ZSA Moonlander 11%, IBM Model M 10%
+  2024-2026: Apple Magic Keyboard 17%, Keychron 16%, IBM Model M 14%, ZSA Moonlander 13%, Kinesis Advantage 10%
+headphones
+  2010-2015: Beyerdynamic DT 26%, Audio-Technica ATH-M50 18%, Etymotic 17%, Bose QC 14%, Sennheiser HD 280/25 9%
+  2016-2020: AirPods (base) 61%, AirPods Pro 10%, Bose QC 9%, Sony WH-1000XM 5%, AirPods Max 3%
+  2021-2023: AirPods (base) 61%, AirPods Pro 18%, AirPods Max 5%, Sony WH-1000XM 5%, Bose QC 3%
+  2024-2026: AirPods (base) 66%, AirPods Pro 16%, AirPods Max 6%, Sony WH-1000XM 4%, Bose QC 2%
+laptops
+  2010-2015: MacBook Pro 47%, MacBook Air 33%, ThinkPad T-series 3%, Dell XPS 13 3%, ThinkPad X220/X230 3%
+  2016-2020: MacBook Pro 51%, MacBook Air 15%, Dell XPS 13 8%, System76 6%, ThinkPad T-series 5%
+  2021-2023: MacBook Pro 42%, MacBook Air 21%, System76 8%, Framework Laptop 8%, ThinkPad T-series 5%
+  2024-2026: MacBook Pro 41%, MacBook Air 26%, Framework Laptop 11%, System76 5%, ThinkPad T-series 5%
+tablets_ereaders
+  2010-2015: iPad Pro 31%, Kindle Paperwhite 28%, Kobo 21%, reMarkable 15%, Boox 1%
+  2016-2020: iPad Pro 58%, reMarkable 17%, Kobo 11%, Kindle Paperwhite 8%, Boox 4%
+  2021-2023: iPad Pro 35%, reMarkable 26%, Kobo 16%, Boox 11%, Kindle Paperwhite 6%
+  2024-2026: Kobo 29%, iPad Pro 26%, reMarkable 18%, Boox 13%, Kindle Paperwhite 7%
+mice_trackpads
+  2010-2015: Apple Magic Mouse 52%, Apple Magic Trackpad 26%, Kensington Expert/Slimblade 10%, Logitech Trackman/M570 6%, Razer DeathAdder 3%
+  2016-2020: Apple Magic Mouse 35%, Apple Magic Trackpad 27%, Logitech MX Master 12%, Kensington Expert/Slimblade 10%, Logitech Trackman/M570 6%
+  2021-2023: Apple Magic Mouse 32%, Logitech MX Master 23%, Apple Magic Trackpad 21%, Kensington Expert/Slimblade 9%, Logitech MX Ergo 7%
+  2024-2026: Apple Magic Mouse 37%, Logitech MX Master 21%, Apple Magic Trackpad 19%, Kensington Expert/Slimblade 8%, Logitech MX Ergo 6%
+monitors
+  2010-2015: Apple Thunderbolt/Cinema Display 71%, Dell U-series UltraSharp 26%, Samsung Odyssey G9 1%, Apple Studio Display 0%, Dasung e-ink 0%
+  2016-2020: Apple Thunderbolt/Cinema Display 30%, Dell U-series UltraSharp 21%, Dasung e-ink 14%, LG UltraFine 5K 13%, LG OLED TV as monitor 9%
+  2021-2023: Apple Studio Display 23%, LG UltraFine 5K 14%, LG OLED TV as monitor 13%, Dell U-series UltraSharp 11%, Apple Pro Display XDR 11%
+  2024-2026: Apple Studio Display 36%, LG OLED TV as monitor 14%, Dell U-series UltraSharp 10%, LG UltraFine 5K 9%, Apple Pro Display XDR 9%
+phones
+  2010-2015: Nexus 69%, Samsung Galaxy S 20%, iPhone SE 4%, OnePlus 3%, Fairphone 1%
+  2016-2020: Google Pixel 24%, Nexus 22%, iPhone SE 19%, Samsung Galaxy S 14%, OnePlus 14%
+  2021-2023: Google Pixel 40%, iPhone SE 18%, Fairphone 11%, OnePlus 11%, Samsung Galaxy S 10%
+  2024-2026: Google Pixel 43%, Fairphone 15%, iPhone SE 14%, OnePlus 12%, Samsung Galaxy S 8%
+home_appliances
+  2010-2015: Roomba 47%, Nest Thermostat 20%, Philips Hue 12%, Miele 8%, Dyson vacuum 6%
+  2016-2020: Roomba 42%, Philips Hue 15%, Nest Thermostat 12%, Miele 12%, Ecobee 7%
+  2021-2023: Roomba 36%, Miele 18%, Philips Hue 16%, Nest Thermostat 7%, Ecobee 6%
+  2024-2026: Roomba 44%, Miele 17%, Roborock 11%, Philips Hue 9%, Ecobee 5%
+kitchen_coffee
+  2010-2015: AeroPress 58%, KitchenAid 8%, Nespresso 7%, Vitamix 6%, Zojirushi 5%
+  2016-2020: AeroPress 28%, Instant Pot 23%, KitchenAid 10%, Zojirushi 9%, Nespresso 8%
+  2021-2023: AeroPress 27%, Instant Pot 24%, Breville 10%, KitchenAid 9%, Zojirushi 8%
+  2024-2026: AeroPress 21%, Instant Pot 18%, Breville 14%, KitchenAid 14%, Zojirushi 9%
+
+=== last active: lifetime authors>=150, share of authors in 2024-26 vs lifetime
+                             product             cat  life  recent   pct
+0                              Nexus          phones  4139     179   4.3
+1                        Birkenstock  clothing_shoes   171       9   5.3
+2   Apple Thunderbolt/Cinema Display        monitors   561      32   5.7
+3                   Chromebook Pixel         laptops   375      22   5.9
+4                       Das Keyboard       keyboards   347      22   6.3
+5                        Dell XPS 13         laptops  2008     132   6.6
+6                     Steelcase Leap          chairs   197      13   6.6
+7             Audio-Technica ATH-M50      headphones   161      14   8.7
+8                           Onewheel  bikes_mobility   241      22   9.1
+9                            VanMoof  bikes_mobility   236      24  10.2
+10                          Etymotic      headphones   192      20  10.4
+11          Microsoft Natural/Sculpt       keyboards   442      48  10.9
+12                         Moleskine      pens_paper   651      72  11.1
+13                           Bose QC      headphones   527      60  11.4
+14                   Beyerdynamic DT      headphones   265      31  11.7
+15               Herman Miller Aeron          chairs  1360     160  11.8
+16                           Peloton         fitness  1343     169  12.6
+17                           ErgoDox       keyboards   836     107  12.8
+18                         Nespresso  kitchen_coffee   156      20  12.8
+19                  Samsung Galaxy S          phones  2240     298  13.3
+20                ThinkPad X220/X230         laptops  1023     145  14.2
+21              Herman Miller Embody          chairs   231      33  14.3
+comments w/ switch phrase 20237
+edges 162
+=== top from -> to (distinct authors) with reverse count
+  MacBook Pro -> MacBook Air: 21  (reverse 10)
+  MacBook Air -> MacBook Pro: 10  (reverse 21)
+  MacBook Pro -> Dell XPS 13: 9  (reverse 0)
+  Apple Watch -> Garmin: 9  (reverse 1)
+  MacBook Pro -> ThinkPad T-series: 7  (reverse 3)
+  MacBook Pro -> Surface Laptop/Book: 6  (reverse 3)
+  MacBook Pro -> ThinkPad X1 Carbon: 6  (reverse 3)
+  MacBook Pro -> System76: 5  (reverse 0)
+  Fitbit -> Garmin: 4  (reverse 0)
+  ThinkPad T-series -> MacBook Pro: 3  (reverse 7)
+  Surface Laptop/Book -> MacBook Pro: 3  (reverse 6)
+  Nexus -> Google Pixel: 3  (reverse 0)
+  Google Pixel -> OnePlus: 3  (reverse 2)
+  Nexus -> OnePlus: 3  (reverse 0)
+  ThinkPad X1 Carbon -> MacBook Pro: 3  (reverse 6)
+  Kindle Paperwhite -> Kobo: 3  (reverse 0)
+  Roomba -> Roborock: 3  (reverse 0)
+  iPhone SE -> Google Pixel: 2  (reverse 1)
+  Dell XPS 13 -> MacBook Air: 2  (reverse 2)
+  MacBook Pro -> ThinkPad X220/X230: 2  (reverse 0)
+  Dell XPS 13 -> ThinkPad X1 Carbon: 2  (reverse 1)
+  OnePlus -> Google Pixel: 2  (reverse 3)
+  MacBook Pro -> Framework Laptop: 2  (reverse 0)
+  Nexus -> Samsung Galaxy S: 2  (reverse 1)
+  ThinkPad X220/X230 -> ThinkPad X1 Carbon: 2  (reverse 0)
+  MacBook Air -> Dell XPS 13: 2  (reverse 2)
+  MacBook Air -> Surface Laptop/Book: 2  (reverse 0)
+  Bose QC -> Sony WH-1000XM: 2  (reverse 0)
+  Ender 3 -> Bambu Lab: 2  (reverse 0)
+  Pebble -> Apple Watch: 1  (reverse 0)
+net gain [('Garmin', 13), ('MacBook Air', 8), ('Dell XPS 13', 8), ('ThinkPad X1 Carbon', 7), ('Surface Laptop/Book', 5), ('System76', 5), ('OnePlus', 4), ('Kobo', 4), ('Google
+net loss [('Nintendo Switch', -1), ('Pebble', -2), ('Bose QC', -2), ('Ender 3', -2), ('Kindle Paperwhite', -3), ('Roomba', -3), ('Fitbit', -5), ('Apple Watch', -7), ('Nexus', 

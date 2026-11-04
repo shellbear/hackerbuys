@@ -1,0 +1,209 @@
+/Users/shellbear/code/hackerbuys/scripts/07_score.py:21: Pandas4Warning: The 'lsuffix' and 'rsuffix' keywords in DataFrame.join are deprecated and will be removed in a future version. Use the 'suffixes' keyword instead.
+  j=tr.join(te[['pos_new','authors']],rsuffix='_te',how='left').fillna(0)
+┌─────────────────────┬───────────────────┬─────────┬────────┬────────┬─────────┬────────┬─────────┬────────┐
+│       product       │        cat        │ authors │  pos   │  neg   │ pos_pct │ score  │ first_y │ last_y │
+│       varchar       │      varchar      │  int64  │ int128 │ int128 │ double  │ double │  int32  │ int32  │
+├─────────────────────┼───────────────────┼─────────┼────────┼────────┼─────────┼────────┼─────────┼────────┤
+│ MacBook Pro         │ laptops           │   16035 │   2527 │    839 │    75.0 │ 8394.0 │    2007 │   2026 │
+│ Kindle (all)        │ tablets_ereaders  │   12699 │   1715 │    485 │    78.0 │ 5845.0 │    2007 │   2026 │
+│ ThinkPad (all)      │ laptops           │    9471 │   1973 │    422 │    82.0 │ 5645.0 │    2007 │   2026 │
+│ Raspberry Pi        │ sbc_maker         │   12797 │   1306 │    226 │    85.0 │ 5421.0 │    2011 │   2026 │
+│ MacBook Air         │ laptops           │    8165 │   1145 │    247 │    82.0 │ 4061.0 │    2007 │   2026 │
+│ Apple Watch         │ wearables_watches │    6475 │    704 │    184 │    79.0 │ 2721.0 │    2008 │   2026 │
+│ AirPods (base)      │ headphones        │    5111 │    665 │    234 │    74.0 │ 2197.0 │    2012 │   2026 │
+│ Mac mini            │ pc_components     │    5048 │    519 │    144 │    78.0 │ 2107.0 │    2007 │   2026 │
+│ Nexus               │ phones            │    4139 │    570 │    263 │    68.0 │ 1869.0 │    2010 │   2026 │
+│ Google Pixel        │ phones            │    4439 │    527 │    219 │    71.0 │ 1855.0 │    2010 │   2026 │
+│   ·                 │   ·               │      ·  │     ·  │      · │      ·  │    ·   │      ·  │     ·  │
+│   ·                 │   ·               │      ·  │     ·  │      · │      ·  │    ·   │      ·  │     ·  │
+│   ·                 │   ·               │      ·  │     ·  │      · │      ·  │    ·   │      ·  │     ·  │
+│ Roomba              │ home_appliances   │    2089 │    161 │     82 │    66.0 │  711.0 │    2007 │   2026 │
+│ GoPro               │ cameras           │    1859 │    177 │     50 │    78.0 │  694.0 │    2008 │   2026 │
+│ Nintendo Switch     │ gaming            │    1833 │    148 │     39 │    79.0 │  682.0 │    2016 │   2026 │
+│ ThinkPad X1 Carbon  │ laptops           │    1169 │    219 │     46 │    82.0 │  649.0 │    2012 │   2026 │
+│ Surface Laptop/Book │ laptops           │    1359 │    198 │     42 │    82.0 │  649.0 │    2012 │   2026 │
+│ ThinkPad X220/X230  │ laptops           │    1023 │    227 │     32 │    87.0 │  627.0 │    2011 │   2026 │
+│ AirPods Pro         │ headphones        │    1286 │    193 │     48 │    80.0 │  614.0 │    2016 │   2026 │
+│ Kinesis Advantage   │ keyboards         │     887 │    173 │     13 │    93.0 │  551.0 │    2008 │   2026 │
+│ Anker chargers      │ tools_edc         │    1328 │    154 │     42 │    78.0 │  550.0 │    2010 │   2026 │
+│ MikroTik            │ networking        │    1075 │    173 │     28 │    86.0 │  526.0 │    2010 │   2026 │
+└─────────────────────┴───────────────────┴─────────┴────────┴────────┴─────────┴────────┴─────────┴────────┘
+  40 rows (20 shown)                                                                              9 columns
+
+┌───────────────────┬──────────┬─────────┬─────────┐
+│        cat        │ products │ authors │ pos_pct │
+│      varchar      │  int64   │ int128  │ double  │
+├───────────────────┼──────────┼─────────┼─────────┤
+│ laptops           │       11 │   45609 │    79.0 │
+│ tablets_ereaders  │        7 │   21849 │    81.0 │
+│ phones            │        6 │   16470 │    71.0 │
+│ sbc_maker         │        7 │   15578 │    85.0 │
+│ wearables_watches │        9 │   14686 │    79.0 │
+│ gaming            │        6 │    9718 │    83.0 │
+│ pc_components     │        6 │    9607 │    80.0 │
+│ headphones        │       11 │    8747 │    78.0 │
+│ networking        │        6 │    7215 │    81.0 │
+│ keyboards         │       12 │    6121 │    88.0 │
+│     ·             │        · │      ·  │      ·  │
+│     ·             │        · │      ·  │      ·  │
+│     ·             │        · │      ·  │      ·  │
+│ audio_hifi        │        6 │    2263 │    71.0 │
+│ chairs            │        7 │    1942 │    87.0 │
+│ pens_paper        │        9 │    1546 │    91.0 │
+│ fitness           │        4 │    1537 │    76.0 │
+│ clothing_shoes    │       10 │    1315 │    82.0 │
+│ bikes_mobility    │        3 │     680 │    74.0 │
+│ bed_sleep         │        5 │     275 │    84.0 │
+│ bags_luggage      │        5 │     238 │    85.0 │
+│ lighting_desk     │        3 │     111 │    95.0 │
+│ desks             │        5 │     107 │    77.0 │
+└───────────────────┴──────────┴─────────┴─────────┘
+  26 rows (20 shown)                     4 columns
+
+┌───────────────────────┬─────────┬────────┬────────┬─────────┐
+│        product        │ authors │  pos   │  neg   │ pos_pct │
+│        varchar        │  int64  │ int128 │ int128 │ double  │
+├───────────────────────┼─────────┼────────┼────────┼─────────┤
+│ IKEA Bekant           │      53 │      1 │      2 │    40.0 │
+│ Red Wing              │      98 │      2 │      3 │    43.0 │
+│ Smartwool             │      46 │      1 │      1 │    50.0 │
+│ VanMoof               │     236 │     13 │     13 │    50.0 │
+│ Bowflex dumbbells     │      54 │      4 │      3 │    56.0 │
+│ Apple Pro Display XDR │     184 │     15 │     11 │    57.0 │
+│ Samsung EVO SSD       │     507 │     27 │     20 │    57.0 │
+│ Dyson vacuum          │     241 │     25 │     16 │    60.0 │
+│ Razer DeathAdder      │      60 │     10 │      6 │    61.0 │
+│ Swiss Army knife      │      74 │      4 │      2 │    63.0 │
+│ Osprey                │      44 │      4 │      2 │    63.0 │
+│ Birkenstock           │     171 │     10 │      5 │    65.0 │
+└───────────────────────┴─────────┴────────┴────────┴─────────┘
+  12 rows                                           5 columns
+
+┌──────────────────────────┬─────────┬────────┬────────┬─────────┐
+│         product          │ authors │  pos   │  neg   │ pos_pct │
+│         varchar          │  int64  │ int128 │ int128 │ double  │
+├──────────────────────────┼─────────┼────────┼────────┼─────────┤
+│ Pilot G2                 │      97 │     23 │      0 │    96.0 │
+│ Ricoh GR                 │      65 │     18 │      0 │    95.0 │
+│ Pilot Metropolitan       │      79 │     16 │      0 │    94.0 │
+│ Etymotic                 │     192 │     48 │      2 │    94.0 │
+│ HÅG Capisco              │      50 │     15 │      0 │    94.0 │
+│ Lamy Safari/2000         │     307 │     78 │      4 │    94.0 │
+│ Darn Tough               │      98 │     14 │      0 │    94.0 │
+│ Steelcase Leap           │     197 │     43 │      2 │    94.0 │
+│ Concept2 rower           │     117 │     26 │      1 │    93.0 │
+│ Chromebook Pixel         │     375 │     53 │      3 │    93.0 │
+│ Dell U-series UltraSharp │     380 │     66 │      4 │    93.0 │
+│ Pinecil                  │     174 │     39 │      2 │    93.0 │
+└──────────────────────────┴─────────┴────────┴────────┴─────────┘
+  12 rows                                              5 columns
+
+                  cat                                                                                                                                                            any_value(topp)
+0          audio_hifi                                                                                          Sonos (712), Schiit (52), Blue Yeti (43), KEF (39), Klipsch (34), Shure SM7B (24)
+1        bags_luggage                                                                                              Peak Design (52), Tom Bihn (20), Osprey (18), Rimowa (10), Briggs & Riley (4)
+2           bed_sleep                                                                                    Tempur-Pedic (40), Casper (27), Eight Sleep (27), Tuft & Needle (26), Loop earplugs (6)
+3      bikes_mobility                                                                                                                                Brompton (105), Onewheel (88), VanMoof (67)
+4             cameras                                                                    GoPro (694), Fujifilm X-series (410), Leica (310), Sony A7 (90), Logitech C920/Brio (62), Ricoh GR (39)
+5              chairs                    Herman Miller Aeron (723), Steelcase Leap (141), Herman Miller Embody (110), HÅG Capisco (40), Steelcase Gesture (22), Secretlab (18), IKEA Markus (17)
+6      clothing_shoes          Uniqlo (193), Allbirds (62), Birkenstock (56), Darn Tough (46), Arc'teryx (44), Red Wing (30), Vivobarefoot (24), Smartwool (14), Levi's 501 (13), Blundstone (9)
+7               desks                                                                            IKEA Bekant (16), Fully Jarvis (12), Uplift Desk (9), IKEA Idasen (6), Autonomous SmartDesk (3)
+8             fitness                                                                                                   Peloton (486), Concept2 rower (67), Bowflex dumbbells (16), Theragun (6)
+9              gaming                                                Steam Deck (1289), Apple Vision Pro (953), Meta Quest (746), Nintendo Switch (682), Valve Index (163), Analogue Pocket (34)
+10         headphones  AirPods (base) (2197), AirPods Pro (614), Bose QC (290), Sony WH-1000XM (249), AirPods Max (181), Beyerdynamic DT (172), Etymotic (123), Audio-Technica ATH-M50 (94), ...
+11    home_appliances               Roomba (711), Miele (291), Philips Hue (271), Nest Thermostat (189), Roborock (128), Ecobee (124), Dyson vacuum (90), Coway purifier (48), Toto Washlet (42)
+12          keyboards  Kinesis Advantage (551), ErgoDox (487), IBM Model M (459), Apple Magic Keyboard (386), HHKB (334), ZSA Moonlander (250), Microsoft Natural/Sculpt (249), Keychron (196...
+13     kitchen_coffee  AeroPress (480), Instant Pot (249), Breville (134), Zojirushi (118), KitchenAid (118), Vitamix (68), Nespresso (68), Gaggia (45), Baratza grinder (33), Lodge cast iro...
+14            laptops  MacBook Pro (8394), ThinkPad (all) (5645), MacBook Air (4061), ThinkPad T-series (1114), System76 (1093), Dell XPS 13 (1021), Framework Laptop (723), Surface Laptop/B...
+15      lighting_desk                                                                                                                      Ergotron arm (63), BenQ ScreenBar (2), Dyson lamp (1)
+16     mice_trackpads  Apple Magic Mouse (346), Apple Magic Trackpad (279), Logitech MX Master (206), Kensington Expert/Slimblade (123), Logitech Trackman/M570 (72), Logitech MX Ergo (58), ...
+17           monitors  Apple Thunderbolt/Cinema Display (233), Dell U-series UltraSharp (206), Apple Studio Display (147), LG OLED TV as monitor (124), LG UltraFine 5K (102), Dasung e-ink (...
+18         networking                                                                   Ubiquiti UniFi (1333), Synology NAS (1014), MikroTik (526), EdgeRouter (196), QNAP (187), FRITZ!Box (81)
+19      pc_components                                                                Mac mini (2107), Intel NUC (822), Mac Studio (460), Noctua fans (210), Samsung EVO SSD (170), Beelink (110)
+20         pens_paper      Moleskine (280), Lamy Safari/2000 (192), Rhodia (77), Rotring 600 (69), Pilot G2 (59), Leuchtturm1917 (53), Pilot Metropolitan (49), Hobonichi (13), Field Notes (10)
+21             phones                                                                Nexus (1869), Google Pixel (1855), iPhone SE (1027), Samsung Galaxy S (851), OnePlus (774), Fairphone (493)
+22          sbc_maker                                                             Raspberry Pi (5421), Prusa (389), Bambu Lab (324), Flipper Zero (172), Ender 3 (117), Pinecil (91), Rigol (63)
+23   tablets_ereaders                                                   Kindle (all) (5845), iPad Pro (1674), reMarkable (883), Kobo (868), Kindle Paperwhite (467), Boox (403), Supernote (126)
+24          tools_edc  Anker chargers (550), DeWalt (172), Makita (127), Leatherman (125), Festool (56), Swiss Army knife (28), Knipex (26), Milwaukee tools (26), Spyderco (25), Benchmade (21)
+25  wearables_watches                            Apple Watch (2721), Garmin (1418), Fitbit (1041), Pebble (337), Seiko (211), Casio G-Shock (146), Oura Ring (132), Casio F-91W (91), Whoop (12)
+backtest n 184
+spearman train mentions -> test positive authors 0.79 top20 hit 14
+spearman train authors -> test positive authors 0.79 top20 hit 14
+spearman train pos -> test positive authors 0.779 top20 hit 14
+spearman train score -> test positive authors 0.784 top20 hit 14
+spearman recent score(2019-21) 0.833 top20 15
+┌──────────────────────┬───────────────────┬───────┬────────────┬────────────┬────────┐
+│       product        │        cat        │  n2   │ per_M_2123 │ per_M_2426 │ ratio  │
+│       varchar        │      varchar      │ int64 │   double   │   double   │ double │
+├──────────────────────┼───────────────────┼───────┼────────────┼────────────┼────────┤
+│ Bambu Lab            │ sbc_maker         │   665 │       11.8 │       73.1 │   6.18 │
+│ Eight Sleep          │ bed_sleep         │    51 │        1.3 │        5.6 │    4.3 │
+│ Beelink              │ pc_components     │   226 │        7.9 │       24.9 │   3.14 │
+│ Apple Vision Pro     │ gaming            │  2024 │       76.2 │      222.6 │   2.92 │
+│ Flipper Zero         │ sbc_maker         │   402 │       15.3 │       44.2 │   2.89 │
+│ Roborock             │ home_appliances   │   160 │        8.2 │       17.6 │   2.15 │
+│ Mac Studio           │ pc_components     │   853 │       47.5 │       93.8 │   1.97 │
+│ Oura Ring            │ wearables_watches │   178 │       10.4 │       19.6 │   1.87 │
+│ Kobo                 │ tablets_ereaders  │   822 │       48.5 │       90.4 │   1.86 │
+│ Pebble               │ wearables_watches │   182 │       11.0 │       20.0 │   1.82 │
+│   ·                  │     ·             │     · │         ·  │         ·  │     ·  │
+│   ·                  │     ·             │     · │         ·  │         ·  │     ·  │
+│   ·                  │     ·             │     · │         ·  │         ·  │     ·  │
+│ FRITZ!Box            │ networking        │    83 │        6.5 │        9.1 │    1.4 │
+│ Allbirds             │ clothing_shoes    │    63 │        5.0 │        6.9 │   1.37 │
+│ Boox                 │ tablets_ereaders  │   388 │       31.7 │       42.7 │   1.35 │
+│ Milwaukee tools      │ tools_edc         │    31 │        2.5 │        3.4 │   1.35 │
+│ Casio F-91W          │ wearables_watches │    79 │        6.5 │        8.7 │   1.33 │
+│ Apple Studio Display │ monitors          │   208 │       17.5 │       22.9 │   1.31 │
+│ Keychron             │ keyboards         │   208 │       17.7 │       22.9 │   1.29 │
+│ Steam Deck           │ gaming            │  1761 │      152.5 │      193.6 │   1.27 │
+│ Roomba               │ home_appliances   │   620 │       53.8 │       68.2 │   1.27 │
+│ Kindle Paperwhite    │ tablets_ereaders  │   213 │       19.2 │       23.4 │   1.22 │
+└──────────────────────┴───────────────────┴───────┴────────────┴────────────┴────────┘
+  25 rows (20 shown)                                                        6 columns
+
+┌────────────────────┬───────┬──────────────┬──────────────┬────────┐
+│      product       │  n1   │ round(r1, 1) │ round(r2, 1) │ ratio  │
+│      varchar       │ int64 │    double    │    double    │ double │
+├────────────────────┼───────┼──────────────┼──────────────┼────────┤
+│ Logitech C920/Brio │    79 │          6.9 │          0.8 │   0.11 │
+│ Blue Yeti          │    60 │          5.2 │          0.5 │   0.11 │
+│ Onewheel           │   173 │         15.1 │          2.4 │   0.16 │
+│ VanMoof            │   190 │         16.5 │          2.6 │   0.16 │
+│ Lodge cast iron    │    40 │          3.5 │          0.5 │   0.16 │
+│ Concept2 rower     │    82 │          7.1 │          1.6 │   0.23 │
+│ Steelcase Leap     │    66 │          5.7 │          1.4 │   0.25 │
+│ Baratza grinder    │    39 │          3.4 │          0.9 │   0.26 │
+│ Peloton            │   833 │         72.5 │         18.6 │   0.26 │
+│ Birkenstock        │    40 │          3.5 │          1.0 │   0.28 │
+│ Das Keyboard       │    89 │          7.7 │          2.4 │   0.31 │
+│ Dell XPS 13        │   527 │         45.9 │         14.5 │   0.32 │
+└────────────────────┴───────┴──────────────┴──────────────┴────────┘
+  12 rows                                                 5 columns
+
+┌───────┬─────────┐
+│   y   │  per_M  │
+│ int64 │ double  │
+├───────┼─────────┤
+│  2007 │  4554.0 │
+│  2008 │  7677.0 │
+│  2009 │  8202.0 │
+│  2010 │ 11036.0 │
+│  2011 │ 10502.0 │
+│  2012 │ 11267.0 │
+│  2013 │  8936.0 │
+│  2014 │  8611.0 │
+│  2015 │  8398.0 │
+│  2016 │  9261.0 │
+│  2017 │  8970.0 │
+│  2018 │  8640.0 │
+│  2019 │  9012.0 │
+│  2020 │ 10031.0 │
+│  2021 │  9360.0 │
+│  2022 │  9642.0 │
+│  2023 │  8940.0 │
+│  2024 │  8441.0 │
+│  2025 │  8221.0 │
+│  2026 │  8561.0 │
+└───────┴─────────┘
+      20 rows    
+
