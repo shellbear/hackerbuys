@@ -10,6 +10,7 @@
     happy,
     longest: p => p.maxt,
     last: p => p.ly,
+    verdict: (p, view) => (view === 'recent' ? p.rw : p.w),
   };
   const defaultDir = key => (key === 'name' ? 'asc' : 'desc');
 

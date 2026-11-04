@@ -45,3 +45,13 @@ test('sorting does not change the input order', () => {
   const before = names(rows); sortRows(rows, 'count', 'desc', 'loved');
   assert.deepEqual(names(rows), before);
 });
+test('verdict sorts by confidence score, best first by default', () => {
+  assert.equal(defaultDir('verdict'), 'desc');
+  const t = [P('mid', 50, 40, 10, 2026, { w: 0.7 }), P('top', 90, 88, 2, 2026, { w: 0.92 }), P('low', 40, 5, 35, 2026, { w: 0.08 })];
+  assert.deepEqual(names(sortRows(t, 'verdict', 'desc', 'loved')), ['top', 'mid', 'low']);
+  assert.deepEqual(names(sortRows(t, 'verdict', 'asc', 'loved')), ['low', 'mid', 'top']);
+});
+test('verdict uses the recent score in the recent view', () => {
+  const t = [P('oldhit', 90, 90, 0, 2026, { w: 0.9, rw: 0.1, rown: 3 }), P('newhit', 9, 9, 0, 2026, { w: 0.5, rw: 0.8, rown: 3 })];
+  assert.deepEqual(names(sortRows(t, 'verdict', 'desc', 'recent')), ['newhit', 'oldhit']);
+});

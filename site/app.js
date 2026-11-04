@@ -18,7 +18,7 @@ function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MI
  ...Object.entries(CATS).map(([k,v])=>[k,v,live.filter(p=>p.c===k).length]).filter(x=>x[2]>0).sort((a,b)=>b[2]-a[2]).map(([k,v,n])=>el('a',{href:`#/c/${k}`,'aria-current':cur===k?'page':null},v,el('span',{},String(n)))),
  el('p',{class:'navh'},'Verdict tags'),...tags.filter(x=>QUAL.includes(x[0])).map(tagLink),el('p',{class:'navh'},'Smaller groups'),...tags.filter(x=>!QUAL.includes(x[0])).map(tagLink))}
 function chips(tags,cur){return tags&&tags.length?el('span',{class:'chips'},tags.filter(t=>t!==cur&&TAGS[t]).map(t=>el('a',{href:`#/t/${t}`,title:TAGS[t][1]},TAGS[t][0]))):null}
-const PAGE=100,HAPPY_TIP='Positive verdicts as a share of positive and negative. Neutral verdicts are not counted.';let SORT=null,SHOW=PAGE;
+const PAGE=100,VERDICT_TIP='Sorts by how confidently positive owners are, adjusted for how many gave a verdict. Reverse it to see the most disliked.',HAPPY_TIP='Positive verdicts as a share of positive and negative. Neutral verdicts are not counted.';let SORT=null,SHOW=PAGE;
 function list(cat,view='loved',tag,keep){if(!keep){SORT=null;SHOW=PAGE}nav(cat,tag);const base=cat?`#/c/${cat}`:tag?`#/t/${tag}`:'#/',v=VIEWS[view],ranked=scored(view,cat,tag),all=SORT?TableSort.sortRows(ranked,SORT.key,SORT.dir,view):ranked,r=all.slice(0,SHOW);
  const again=()=>{const y=window.scrollY,k=SORT&&SORT.key;list(cat,view,tag,true);window.scrollTo(0,y);if(k){const b=document.querySelector(`th button[data-k="${k}"]`);if(b)b.focus()}};
  const sth=(label,key,cls,tip)=>{if(!key)return el('th',{class:cls,title:tip},label);const on=SORT&&SORT.key===key;
@@ -29,7 +29,7 @@ function list(cat,view='loved',tag,keep){if(!keep){SORT=null;SHOW=PAGE}nav(cat,t
  el('p',{class:'note'},v.d),
  SORT&&SORT.key==='happy'?el('p',{class:'note'},'Products with only a few owners can reach 100%. ',el('a',{href:base},'Most loved'),' adjusts for that.'):null,
  el('div',{class:'key'},el('span',{class:'p'},'Positive'),el('span',{},'Neutral'),el('span',{class:'n'},'Negative')),
- r.length?el('table',{},el('thead',{},el('tr',{},sth('Product','name'),sth(head[0]),sth(head[1],'count'),sth(head[2],view==='long'?'longest':'happy',view==='long'?null:'hide-s',view==='long'?null:HAPPY_TIP),sth('Last mention','last','hide-s'))),
+ r.length?el('table',{},el('thead',{},el('tr',{},sth('Product','name'),sth(head[0],'verdict',null,VERDICT_TIP),sth(head[1],'count'),sth(head[2],view==='long'?'longest':'happy',view==='long'?null:'hide-s',view==='long'?null:HAPPY_TIP),sth('Last mention','last','hide-s'))),
  el('tbody',{},r.map(p=>{const P=view==='recent'?[p.rpos,p.rown-p.rpos-p.rneg,p.rneg]:[p.pos,p.neu,p.neg],tot=P[0]+P[2];
   return el('tr',{},el('td',{class:'nm'},el('a',{href:`#/p/${p.k}`},p.n),cat?null:el('small',{},CATS[p.c]||p.c),chips(p.tags,tag)),el('td',{class:'ty'},tally(...P,60)),
   el('td',{},String(view==='long'?p.lh:view==='recent'?p.rown:p.own)),view==='long'?el('td',{},p.maxt?`${p.maxt} yrs`:'–'):el('td',{class:'hide-s'},tot?`${Math.round(100*P[0]/tot)}%`:'–'),el('td',{class:'hide-s'},String(p.ly)))}))):el('p',{class:'empty'},'No products have enough owners here yet. Try another ranking or category.'),
