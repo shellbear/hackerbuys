@@ -5,7 +5,6 @@
   // Static site only: no Worker script, so requests are served directly from these files.
   "assets": { "directory": "./site" },
   "routes": [
-    { "pattern": "hackerbuys.shellbear.me", "custom_domain": true },
     { "pattern": "hn.shellbear.me", "custom_domain": true }
   ]
 }
