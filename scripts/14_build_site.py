@@ -4,6 +4,8 @@ import json,glob,re,math,collections,os,shutil,sys
 sys.path.insert(0,'scripts')
 import duckdb
 import extract_lib as L
+import site_render as SR
+import datetime as dt
 MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
 QUEUE,OUT='data/extract/queue.parquet','extract/out'
 R='analysis/run41k'
@@ -184,7 +186,7 @@ def calc_tags(e,v,k,by_ten,gl):
 GENERIC=set('apple dell lenovo asus hp acer sony samsung logitech microsoft google bose nokia ikea steelcase herman miller sennheiser beyerdynamic motorola htc amazon lg toshiba huawei xiaomi intel amd nvidia canon nikon anker'.split())|{'herman miller'}
 index=[]
 PUB={k for k,v in G.items() if len({x['by'] for x in v if x['first_hand']})>=MIN_PAGE_OWNERS}
-shutil.rmtree('site/data/p',ignore_errors=True);os.makedirs('site/data/p')
+pages=[]
 for k,v in G.items():
     if k not in PUB: continue
     v=sorted(v,key=lambda x:x['time'])
@@ -222,8 +224,31 @@ for k,v in G.items():
         seen.add(x['id']);src=text[x['id']]
         cs.append(dict(id=x['id'],by=x['by'],d=x['time'],s=x['stance'],fh=x['first_hand'],ten=x['tenure_years'],sg=x['still_going'],m=x.get('model') or '',g=gen_label(x),sf=x.get('switched_from') or '',t=L.trim_text(src['text'],MAX_TEXT),th=x['title'] or '',root=x['root']))
     cs=L.pick_comments(cs,MAX_COMMENTS)
-    json.dump(dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why),open(f'site/data/p/{k}.json','w'),ensure_ascii=False)
+    pages.append(dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why))
 json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL))),open('site/data/index.json','w'),ensure_ascii=False)
+# Real HTML pages: the content is in the file, and app.js adds sorting and filters on top.
+def write(path,body):
+    os.makedirs(os.path.dirname(path),exist_ok=True)
+    with open(path,'w') as f: f.write(body)
+for d in ('site/data/p','site/p','site/c','site/t'): shutil.rmtree(d,ignore_errors=True)
+span=None if not FULL else str(min(FULL)) if len(FULL)==1 else f"{min(FULL)} to {max(FULL)}"
+cover=f"Based on {len(meta):,} of about 41 million comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
+cats,tags=SR.read_meta('site/app.js')
+site=SR.Site(cats,tags,cover,index)
+ranked=sorted((p for p in index if p['own']>=3 and not p['bo']),key=lambda p:(-p['w'],-p['own']))
+paths=['/']
+write('site/index.html',site.list_page(ranked))
+write('site/404.html',site.not_found())
+for k in cats:
+    r=[p for p in ranked if p['c']==k]
+    if r: write(f'site/c/{SR.slug(k)}.html',site.list_page(r,cat=k));paths.append(SR.cat_path(k))
+for k in tags:
+    r=[p for p in ranked if k in p['tags']]
+    if r: write(f'site/t/{SR.slug(k)}.html',site.list_page(r,tag=k));paths.append(SR.tag_path(k))
+for p in pages: write(f"site/p/{p['k']}.html",site.product_page(p))
+write('site/sitemap.xml',SR.sitemap(paths,index,dt.date.today().isoformat()))
+write('site/robots.txt',SR.robots())
+print('pages',len(pages),'categories and tags',len(paths)-1,'in sitemap',len(paths)+sum(SR.indexable(p) for p in index))
 print('products',len(index),'with 3+ owners',sum(e['own']>=3 for e in index))
 
 cc=collections.Counter(e['c'] for e in index if e['own']>=3 and not e['bo']);tc=collections.Counter(t for e in index if e['own']>=3 for t in e['tags'])

@@ -3,7 +3,7 @@
   "name": "hackerbuys",
   "compatibility_date": "2026-11-03",
   // Static site only: no Worker script, so requests are served directly from these files.
-  "assets": { "directory": "./site" },
+  "assets": { "directory": "./site", "not_found_handling": "404-page" },
   "routes": [
     { "pattern": "hn.shellbear.me", "custom_domain": true }
   ]
