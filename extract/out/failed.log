@@ -7,3 +7,4 @@
 {"first_id": 48545189, "n": 50, "error": "duplicate index 23", "at": "2026-11-04T13:41:20"}
 {"first_id": 47338700, "n": 50, "error": "duplicate index 11", "at": "2026-11-04T13:59:22"}
 {"first_id": 48293566, "n": 50, "error": "duplicate index 38", "at": "2026-11-04T14:03:54"}
+{"first_id": 43932054, "n": 50, "error": "index 50 is outside the batch", "at": "2026-11-04T16:21:27"}

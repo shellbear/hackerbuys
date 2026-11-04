@@ -190,4 +190,40 @@ class PromptSplit(unittest.TestCase):
     def test_user_message_is_only_the_items(self):
         self.assertEqual(json.loads(L.payload(ROWS))[0]['text'], ROWS[0]['text'])
 
+class SiteRules(unittest.TestCase):
+    def test_keeps_first_hand_verdict(self): self.assertTrue(L.keep_mention(product()))
+    def test_drops_bare_mention_by_non_owner(self):
+        self.assertFalse(L.keep_mention(product(stance='neutral', first_hand=False)))
+    def test_keeps_opinion_from_non_owner(self):
+        self.assertTrue(L.keep_mention(product(stance='negative', first_hand=False)))
+    def test_drops_excluded_product_types(self):
+        for t in ('car', 'electric car', 'operating system', 'motorcycle'):
+            self.assertFalse(L.keep_mention(product(product_type=t)), t)
+    def test_card_and_notebook_are_not_excluded(self):
+        for t in ('graphics card', 'sound card', 'notebook', 'cargo bike'):
+            self.assertTrue(L.keep_mention(product(product_type=t)), t)
+    def test_old_sample_without_product_type_is_kept(self):
+        p = product(); del p['product_type']
+        self.assertTrue(L.keep_mention(p))
+    def comments(self, pos, neg):
+        return [dict(id=i, s='positive', fh=True, ten=None, d='2026-01-01') for i in range(pos)] + \
+               [dict(id=1000 + i, s='negative', fh=True, ten=None, d='2020-01-01') for i in range(neg)]
+    def test_cap_limits_comment_count(self):
+        self.assertEqual(len(L.pick_comments(self.comments(100, 0), 30)), 30)
+    def test_cap_does_not_hide_negative_comments(self):
+        picked = L.pick_comments(self.comments(100, 100), 30)
+        self.assertGreaterEqual(sum(c['s'] == 'negative' for c in picked), 10)
+    def test_cap_returns_everything_when_under_limit(self):
+        self.assertEqual(len(L.pick_comments(self.comments(3, 2), 30)), 5)
+    def test_long_ownership_is_preferred(self):
+        cs = self.comments(40, 0); cs[39]['ten'] = 12
+        self.assertIn(39, [c['id'] for c in L.pick_comments(cs, 30)])
+    def test_full_years_need_nearly_all_queue_comments_done(self):
+        self.assertEqual(L.full_years({2026: (100, 100), 2025: (1000, 996), 2024: (1000, 990)}), {2026, 2025})
+    def test_trends_need_every_year_in_the_window(self):
+        self.assertFalse(L.trends_ready({2025, 2026}))
+        self.assertTrue(L.trends_ready(set(range(2019, 2027))))
+    def test_long_text_is_trimmed(self):
+        self.assertLessEqual(len(L.trim_text('x' * 5000, 1500)), 1501)
+
 if __name__ == '__main__': unittest.main()

@@ -1,5 +1,11 @@
-"""Build static site JSON from run41k extractions. Counts are within the sample, not all of HN."""
-import json,glob,re,math,collections,os,shutil
+"""Build static site JSON from the run41k sample plus the extraction pipeline's results in extract/out.
+Needs data/extract/queue.parquet for comment text. Counts cover scanned comments, not all of HN."""
+import json,glob,re,math,collections,os,shutil,sys
+sys.path.insert(0,'scripts')
+import duckdb
+import extract_lib as L
+MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
+QUEUE,OUT='data/extract/queue.parquet','extract/out'
 R='analysis/run41k'
 text={};meta={}
 for f in glob.glob(f'{R}/in/*.jsonl'):
@@ -92,17 +98,34 @@ def parse_free(s):
     b=canon('',s)
     return b if b[0] else a
 ms=[];bad=0
+def add_products(cid,products,M):
+    for p in products:
+        if not L.keep_mention(p): continue
+        cb,cl=canon(p.get('brand'),p.get('line'))
+        if not cl and p.get('model'): cb,cl=canon(p.get('brand'),p.get('model'))
+        p=dict(p,category=recat(p.get('category'),p.get('brand'),p.get('line')),topic=topic(p.get('brand'),p.get('line')))
+        ms.append(dict(p,id=cid,by=M['by'],time=M['time'][:10],y=int(M['time'][:4]),tier=M['tier'],root=M['root_id'],title=M['root_title'],cb=cb,cl=cl,key=norm_key(cb,cl),disp=display(cb,cl,(p.get('brand') or '').strip())))
 for f in sorted(glob.glob(f'{R}/out/*.jsonl')):
     for l in open(f):
         try:d=json.loads(l)
         except: bad+=1;continue
         if d['id'] not in meta: bad+=1;continue
-        M=meta[d['id']]
-        for p in d['products']:
-            cb,cl=canon(p.get('brand'),p.get('line'))
-            if not cl and p.get('model'): cb,cl=canon(p.get('brand'),p.get('model'))
-            p=dict(p,category=recat(p.get('category'),p.get('brand'),p.get('line')),topic=topic(p.get('brand'),p.get('line')))
-            ms.append(dict(p,id=d['id'],by=M['by'],time=M['time'][:10],y=int(M['time'][:4]),tier=M['tier'],root=M['root_id'],title=M['root_title'],cb=cb,cl=cl,key=norm_key(cb,cl),disp=display(cb,cl,(p.get('brand') or '').strip())))
+        add_products(d['id'],d['products'],meta[d['id']])
+docs=list(L.iter_results(OUT))
+done=L.load_done(OUT)
+con=duckdb.connect();con.execute("set timezone='UTC'")
+counts=collections.defaultdict(lambda:[0,0])
+for i,by,t,y,tier,root,thread,txt in con.execute(f"""select id,"by",time,y,tier,root_id,thread,"text" from read_parquet('{QUEUE}')""").fetchall():
+    counts[y][0]+=1
+    if i in done:
+        counts[y][1]+=1
+        meta[i]=dict(by=by,time=str(t),tier=tier,root_id=root,root_title=thread)
+        text[i]=dict(text=txt)
+FULL=L.full_years({y:tuple(v) for y,v in counts.items()})
+TRENDS=L.trends_ready(FULL)
+for d in docs:
+    for r in d['results']:
+        if r['id'] in meta: add_products(r['id'],r['products'],meta[r['id']])
 print('mentions',len(ms),'bad lines',bad,'comments',len({m['id'] for m in ms}))
 G=collections.defaultdict(list)
 for m in ms: G[m['key']].append(m)
@@ -142,11 +165,13 @@ def calc_tags(e,v,k,by_ten,gl):
     if n5>=3 and nv>=5 and neg/nv<=.2: T['bifl']=f"{n5} owners happy after 5+ years, {neg} of {nv} verdicts negative"
     if nv>=10 and .4<=pos/nv<=.6: T['divisive']=f"{pos} positive and {neg} negative"
     rn,rr=rate(v,2024,LAST);pn,pr=rate(v,2019,2023);old=sum(x['y']<2019 for x in v);nc=len(v)
-    if rn>=5 and rr>=1.5*max(pr,1e-9) and pn>0: T['rising']=f"{rn} mentions since 2024, {rr/pr:.1f}× the 2019–23 rate for the same sampled volume"
-    elif rn>=5 and pn==0: T['rising']=f"{rn} mentions since 2024, none in 2019–23"
-    if nc>=8 and pn>=5 and rr<=.4*pr: T['fading']=f"{rn} mention{'s' if rn!=1 else ''} since 2024 against {pn} in 2019–23, after adjusting for sampled volume"
-    if nc>=8 and rn<=max(1,.1*nc) and old>=.6*nc: T['dated']=f"{old} of {nc} mentions are from before 2019, {rn} since 2024"
-    if 'dated' in T: T.pop('fading',None)
+    # Rates compare years, which is only fair once every year in the window is fully scanned.
+    if TRENDS:
+        if rn>=5 and rr>=1.5*max(pr,1e-9) and pn>0: T['rising']=f"{rn} mentions since 2024, {rr/pr:.1f}× the 2019–23 rate for the same sampled volume"
+        elif rn>=5 and pn==0: T['rising']=f"{rn} mentions since 2024, none in 2019–23"
+        if nc>=8 and pn>=5 and rr<=.4*pr: T['fading']=f"{rn} mention{'s' if rn!=1 else ''} since 2024 against {pn} in 2019–23, after adjusting for sampled volume"
+        if nc>=8 and rn<=max(1,.1*nc) and old>=.6*nc: T['dated']=f"{old} of {nc} mentions are from before 2019, {rn} since 2024"
+        if 'dated' in T: T.pop('fading',None)
     inn={f for f in moved if k in moved[f] and not same_line(f,k)}
     i=sum(len(moved[f][k]) for f in inn);o=sum(len(s) for t,s in moved[k].items() if not same_line(t,k))
     if i>=3 and i>=2*max(o,1): T['switch']=f"{i} owners came from other products, {o} left for one"
@@ -158,8 +183,10 @@ def calc_tags(e,v,k,by_ten,gl):
     return T
 GENERIC=set('apple dell lenovo asus hp acer sony samsung logitech microsoft google bose nokia ikea steelcase herman miller sennheiser beyerdynamic motorola htc amazon lg toshiba huawei xiaomi intel amd nvidia canon nikon anker'.split())|{'herman miller'}
 index=[]
+PUB={k for k,v in G.items() if len({x['by'] for x in v if x['first_hand']})>=MIN_PAGE_OWNERS}
 shutil.rmtree('site/data/p',ignore_errors=True);os.makedirs('site/data/p')
 for k,v in G.items():
+    if k not in PUB: continue
     v=sorted(v,key=lambda x:x['time'])
     cat=collections.Counter(x['category'] for x in v).most_common(1)[0][0]
     latest={}
@@ -183,8 +210,8 @@ for k,v in G.items():
             if x['stance']=='negative': gens[g][2].add(x['by'])
     gl=sorted(sorted(([g,len(a),len(b),len(c)] for g,(a,b,c) in gens.items()),key=lambda r:-r[1])[:12],key=lambda r:(0 if re.fullmatch(r'(19|20)\d\d',r[0]) else 1 if re.match(r'M\d',r[0]) else 2,r[0]))
     brand_only=(not v[0]['cl']) and (v[0]['cb'] in GENERIC or not v[0]['cb'])
-    to=sorted(((names[t],t,len(s),len(moved[t].get(k,()))) for t,s in moved[k].items()),key=lambda r:-r[2])[:8]
-    fr=sorted(((names[f],f,len(moved[f][k]),len(moved[k].get(f,()))) for f in moved if k in moved[f]),key=lambda r:-r[2])[:8]
+    to=sorted(((names[t],t,len(s),len(moved[t].get(k,()))) for t,s in moved[k].items() if t in PUB),key=lambda r:-r[2])[:8]
+    fr=sorted(((names[f],f,len(moved[f][k]),len(moved[k].get(f,()))) for f in moved if k in moved[f] and f in PUB),key=lambda r:-r[2])[:8]
     e=dict(k=k,n=names[k],c=cat,own=len(own),pos=pos,neg=neg,neu=neu,w=round(wilson(pos,pos+neg),4),rown=len(rec),rpos=rp,rneg=rn,rw=round(wilson(rp,rp+rn),4),lh=lh,maxt=max(by_ten.values()) if by_ten else None,still=still,fy=v[0]['y'],ly=v[-1]['y'],nc=len({x['id'] for x in v}),bo=brand_only)
     why={} if brand_only else calc_tags(e,v,k,by_ten,gl)
     e['tags']=list(why)
@@ -193,9 +220,10 @@ for k,v in G.items():
     for x in sorted(v,key=lambda x:(-(x['tenure_years'] or 0),x['time'])):
         if x['id'] in seen: continue
         seen.add(x['id']);src=text[x['id']]
-        cs.append(dict(id=x['id'],by=x['by'],d=x['time'],s=x['stance'],fh=x['first_hand'],ten=x['tenure_years'],sg=x['still_going'],m=x.get('model') or '',g=gen_label(x),sf=x.get('switched_from') or '',t=src['text'],th=x['title'] or '',root=x['root']))
+        cs.append(dict(id=x['id'],by=x['by'],d=x['time'],s=x['stance'],fh=x['first_hand'],ten=x['tenure_years'],sg=x['still_going'],m=x.get('model') or '',g=gen_label(x),sf=x.get('switched_from') or '',t=L.trim_text(src['text'],MAX_TEXT),th=x['title'] or '',root=x['root']))
+    cs=L.pick_comments(cs,MAX_COMMENTS)
     json.dump(dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why),open(f'site/data/p/{k}.json','w'),ensure_ascii=False)
-json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),done=len(glob.glob(f'{R}/out/*.jsonl')))),open('site/data/index.json','w'),ensure_ascii=False)
+json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL))),open('site/data/index.json','w'),ensure_ascii=False)
 print('products',len(index),'with 3+ owners',sum(e['own']>=3 for e in index))
 
 cc=collections.Counter(e['c'] for e in index if e['own']>=3 and not e['bo']);tc=collections.Counter(t for e in index if e['own']>=3 for t in e['tags'])

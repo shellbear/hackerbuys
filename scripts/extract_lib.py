@@ -276,3 +276,42 @@ def queue_size(path):
         return con.execute(f"select count(*) from read_parquet('{path}')").fetchall()[0][0]
     finally:
         con.close()
+
+
+_EXCLUDED_TYPE = re.compile(r"\b(cars?|vehicles?|trucks?|suvs?|motorcycles?|operating systems?|software|apps?|services?|books?|novels?)\b", re.I)
+FULL_YEAR_SHARE = 0.995
+TREND_YEARS = range(2019, 2027)
+
+
+def keep_mention(p):
+    """Site rule: drop bare mentions by non-owners and excluded product types that slipped past the prompt."""
+    if p.get("stance") == "neutral" and not p.get("first_hand"):
+        return False
+    return not _EXCLUDED_TYPE.search(p.get("product_type") or "")
+
+
+def _comment_rank(c):
+    return (not c.get("fh"), -(c.get("ten") or 0), [-ord(ch) for ch in c.get("d", "")])
+
+
+def pick_comments(comments, limit):
+    """Cap a product's comments, reserving a third for negative ones so the cap cannot flatter the product."""
+    if len(comments) <= limit:
+        return sorted(comments, key=_comment_rank)
+    neg = sorted((c for c in comments if c.get("s") == "negative"), key=_comment_rank)[:limit // 3]
+    chosen = {id(c) for c in neg}
+    rest = [c for c in sorted(comments, key=_comment_rank) if id(c) not in chosen][:limit - len(neg)]
+    return sorted(neg + rest, key=_comment_rank)
+
+
+def full_years(counts):
+    """Years whose queue is essentially done. counts maps year to (total, done)."""
+    return {y for y, (n, k) in counts.items() if n and k / n >= FULL_YEAR_SHARE}
+
+
+def trends_ready(years):
+    return set(TREND_YEARS) <= set(years)
+
+
+def trim_text(text, limit):
+    return text if len(text) <= limit else text[:limit].rstrip() + "…"
