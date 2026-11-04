@@ -55,3 +55,21 @@ test('verdict uses the recent score in the recent view', () => {
   const t = [P('oldhit', 90, 90, 0, 2026, { w: 0.9, rw: 0.1, rown: 3 }), P('newhit', 9, 9, 0, 2026, { w: 0.5, rw: 0.8, rown: 3 })];
   assert.deepEqual(names(sortRows(t, 'verdict', 'desc', 'recent')), ['newhit', 'oldhit']);
 });
+
+const { canSwap, listTitle } = require('../site/sort.js');
+const O = 'https://hn.shellbear.me';
+test('site pages can swap without a reload', () => {
+  for (const p of ['/', '/?view=owned', '/p/kinesis-advantage', '/c/mice-trackpads', '/t/bifl', '/c/keyboards?view=long'])
+    assert.equal(canSwap(new URL(O + p), O), true, p);
+});
+test('other sites and files stay normal page loads', () => {
+  assert.equal(canSwap(new URL('https://news.ycombinator.com/item?id=1'), O), false);
+  for (const p of ['/sitemap.xml', '/robots.txt', '/data/index.json', '/app.js', '/nope', '/p/a/b', '/c/', '/404'])
+    assert.equal(canSwap(new URL(O + p), O), false, p);
+});
+test('list titles match the generated pages', () => {
+  assert.equal(listTitle({ cat: 'keyboards', name: 'Keyboards' }), 'Best keyboards according to Hacker News | HackerBuys');
+  assert.equal(listTitle({ cat: 'other_physical', name: 'Everything else' }), 'Other products recommended on Hacker News | HackerBuys');
+  assert.equal(listTitle({ tag: 'bifl', name: 'Buy it for life' }), 'Buy it for life: products according to Hacker News | HackerBuys');
+  assert.equal(listTitle({}), 'HackerBuys: The stuff Hacker News actually recommends.');
+});

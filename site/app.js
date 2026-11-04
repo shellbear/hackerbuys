@@ -59,11 +59,27 @@ function product(p){const m=$('#main');let f='all',sort='ten';const wrap=el('div
 // Old links used #/ routes; send them to the real URL.
 function oldHash(){const h=location.hash;if(!h.startsWith('#/'))return null;const s=h.slice(2).split('/').filter(Boolean);
  if(s[0]==='p'&&s[1])return`/p/${s[1]}`;if((s[0]==='c'||s[0]==='t')&&s[1])return`/${s[0]}/${slug(s[1])}${s[2]?`?view=${s[2]}`:''}`;if(s[0]==='v'&&s[1])return`/?view=${s[1]}`;return'/'}
-function start(){const old=oldHash();if(old)return location.replace(old);
+// Links swap the main content without a reload. Real pages remain for search, new tabs and any failure.
+const pages=new Map();let dbLoad=null,navToken=0;
+const loadDB=()=>dbLoad||(dbLoad=fetch('/data/index.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>DB=d).catch(e=>{dbLoad=null;throw e}));
+const loadPage=u=>{if(!pages.has(u))pages.set(u,fetch(u).then(r=>{if(!r.ok)throw 0;return r.text()}).catch(e=>{pages.delete(u);throw e}));return pages.get(u)};
+function setCanonical(path){const c=document.querySelector('link[rel=canonical]');if(c)c.href=location.origin+path}
+async function show(url,top){const s=url.pathname.split('/').filter(Boolean),t=++navToken;
+ if(s[0]==='p'){const doc=new DOMParser().parseFromString(await loadPage(url.pathname),'text/html'),data=doc.querySelector('#product');if(!data)throw 0;if(t!==navToken)return;
+  document.title=doc.title;$('#cats').innerHTML=doc.querySelector('#cats').innerHTML;product(JSON.parse(data.textContent))}
+ else{await loadDB();if(t!==navToken)return;const q=url.searchParams.get('view'),view=VIEWS[q]?q:'loved',find=(keys,x)=>Object.keys(keys).find(k=>slug(k)===x);
+  const cat=s[0]==='c'?find(CATS,s[1]):null,tag=s[0]==='t'?find(TAGS,s[1]):null;if(s[0]&&!cat&&!tag)throw 0;
+  document.title=TableSort.listTitle({cat,tag,name:cat?CATS[cat]:tag?TAGS[tag][0]:''});list(cat,view,tag)}
+ setCanonical(url.pathname);window.scrollTo(0,top||0)}
+async function go(url){history.replaceState({y:window.scrollY},'');try{await show(url,0);history.pushState({},'',url);$('#main').focus({preventScroll:true})}catch{location.href=url}}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(!a||e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target||a.hasAttribute('download'))return;
+ const url=new URL(a.href);if(!TableSort.canSwap(url,location.origin))return;e.preventDefault();go(url)});
+// Start downloading a product page when the pointer reaches its link, so the click feels immediate.
+document.addEventListener('pointerover',e=>{const a=e.target.closest&&e.target.closest('a[href^="/p/"]');if(a)loadPage(new URL(a.href).pathname).catch(()=>{})},{passive:true});
+addEventListener('popstate',e=>{const url=new URL(location.href);show(url,e.state&&e.state.y).catch(()=>location.reload())});
+function start(){const old=oldHash();if(old)return location.replace(old);if('scrollRestoration'in history)history.scrollRestoration='manual';history.replaceState({y:0},'');
  const embedded=$('#product');if(embedded)return product(JSON.parse(embedded.textContent));
- const s=location.pathname.split('/').filter(Boolean),q=new URLSearchParams(location.search).get('view'),view=VIEWS[q]?q:'loved';
- if(s[0]&&s[0]!=='c'&&s[0]!=='t')return;
- const find=(keys,x)=>Object.keys(keys).find(k=>slug(k)===x);
- // The page is already readable without this; it only adds sorting and the other views.
- fetch('/data/index.json').then(r=>r.json()).then(d=>{DB=d;if(s[0]==='c')return list(find(CATS,s[1]),view);if(s[0]==='t')return list(null,view,find(TAGS,s[1]));list(null,view)}).catch(()=>{})}
+ const url=new URL(location.href);if(!TableSort.canSwap(url,location.origin))return;
+ // The page is already readable without this; it adds sorting and the other views.
+ show(url,0).catch(()=>{})}
 start();

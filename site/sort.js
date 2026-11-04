@@ -27,6 +27,14 @@
         };
     return [...rows].sort(cmp);
   }
-  const api = { sortRows, defaultDir };
+  // Only pages the script can rebuild itself; everything else stays a normal page load.
+  const canSwap = (url, origin) => url.origin === origin && /^\/((p|c|t)\/[^/]+)?$/.test(url.pathname);
+  function listTitle({ cat, tag, name }) {
+    if (cat === 'other_physical') return 'Other products recommended on Hacker News | HackerBuys';
+    if (cat) return `Best ${name.toLowerCase()} according to Hacker News | HackerBuys`;
+    if (tag) return `${name}: products according to Hacker News | HackerBuys`;
+    return 'HackerBuys: The stuff Hacker News actually recommends.';
+  }
+  const api = { sortRows, defaultDir, canSwap, listTitle };
   if (typeof module !== 'undefined') module.exports = api; else root.TableSort = api;
 })(this);
