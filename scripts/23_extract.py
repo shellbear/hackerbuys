@@ -24,6 +24,7 @@ ap.add_argument("--budget-usd", type=float, help="anthropic: stop after this man
 ap.add_argument("--timeout", type=int, default=1200)
 a = ap.parse_args()
 MAX_ATTEMPTS, MAX_CONSECUTIVE_FAILS = 2, 3
+ACCOUNT_RETRIES, ACCOUNT_RETRY_WAIT = 3, 30
 HAIKU_USD = (0.10, 0.50)
 
 
@@ -121,6 +122,12 @@ def guard():
         return False
     if a.adapter == "codex":
         s = read_account()
+        # A laptop waking from sleep can fail one read; still stop if the balance stays unreadable.
+        for _ in range(ACCOUNT_RETRIES):
+            if s["balance"] is not None:
+                break
+            time.sleep(ACCOUNT_RETRY_WAIT)
+            s = read_account()
         reason = L.stop_reason(s, start=start, last=last, floor=a.floor, max_credits=a.max_credits, estimated=st["spent"])
         if s["balance"] is not None:
             last = s["balance"]
