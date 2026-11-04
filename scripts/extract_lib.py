@@ -107,20 +107,18 @@ def parse_results(text, rows):
         results = json.loads(text)["results"]
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         raise ValueError(f"invalid output: {e}") from e
-    out, seen = [], set()
+    merged = {}
     for r in results:
         i = r.get("i")
         if not isinstance(i, int) or not 0 <= i < len(rows):
             raise ValueError(f"index {i!r} is outside the batch")
-        if i in seen:
-            raise ValueError(f"duplicate index {i}")
-        seen.add(i)
         for p in r["products"]:
             _check_product(p)
-        named = [p for p in r["products"] if _is_named(p)]
-        if named:
-            out.append({"id": rows[i]["id"], "products": named})
-    return out
+            # A repeated index is usually one comment's products split across entries, so merge rather than pay for a retry.
+            kept = merged.setdefault(i, [])
+            if _is_named(p) and p not in kept:
+                kept.append(p)
+    return [{"id": rows[i]["id"], "products": ps} for i, ps in merged.items() if ps]
 
 
 def _norm(s):

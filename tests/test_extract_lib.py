@@ -20,9 +20,12 @@ class ParseResults(unittest.TestCase):
         with self.assertRaises(ValueError): L.parse_results('{"results": [', ROWS)
     def test_rejects_index_outside_batch(self):
         with self.assertRaises(ValueError): L.parse_results(raw({'i': 2, 'products': [product()]}), ROWS)
-    def test_rejects_duplicate_index(self):
-        with self.assertRaises(ValueError):
-            L.parse_results(raw({'i': 0, 'products': [product()]}, {'i': 0, 'products': [product()]}), ROWS)
+    def test_repeated_index_merges_its_products(self):
+        out = L.parse_results(raw({'i': 0, 'products': [product()]}, {'i': 0, 'products': [product(line='Embody')]}), ROWS)
+        self.assertEqual([(r['id'], [p['line'] for p in r['products']]) for r in out], [(101, ['Aeron', 'Embody'])])
+    def test_repeated_index_drops_exact_duplicate_product(self):
+        out = L.parse_results(raw({'i': 0, 'products': [product()]}, {'i': 0, 'products': [product()]}), ROWS)
+        self.assertEqual(len(out[0]['products']), 1)
     def test_rejects_unknown_category(self):
         with self.assertRaises(ValueError): L.parse_results(raw({'i': 0, 'products': [product(category='cars')]}), ROWS)
     def test_rejects_unknown_aspect(self):
