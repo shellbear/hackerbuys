@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Process the queue one batch at a time, saving each finished batch. Stop at any time; rerunning continues where it left off, with any adapter.
-  23_extract.py --adapter codex --model gpt-6-luna --batch-size 200 --max-credits 50
-  23_extract.py --adapter anthropic --model claude-haiku-5-5 --batch-size 50 --budget-usd 20
+  23_extract.py --adapter codex --model gpt-6-luna --workers 8 --max-credits 50
+  23_extract.py --adapter anthropic --model claude-haiku-5-5 --budget-usd 20
+Defaults (50 comments per batch, medium effort) come from the sweep in analysis/eval; see README.
 Before each Codex batch the account is re-read, and the run stops on any rule in extract_lib.stop_reason."""
 import argparse, concurrent.futures as cf, json, os, queue, subprocess, sys, tempfile, threading, time
 sys.path.insert(0, "scripts")
@@ -13,7 +14,8 @@ ap.add_argument("--out", default="extract/out", help="result folder; also the re
 ap.add_argument("--also-done", action="append", default=[], help="other result folders whose comments should be skipped")
 ap.add_argument("--adapter", choices=["codex", "anthropic"], required=True)
 ap.add_argument("--model", required=True)
-ap.add_argument("--batch-size", type=int, default=200)
+ap.add_argument("--batch-size", type=int, default=50)
+ap.add_argument("--effort", default="medium")
 ap.add_argument("--workers", type=int, default=1)
 ap.add_argument("--max-batches", type=int)
 ap.add_argument("--floor", type=float, default=100, help="codex: stop below this credit balance")
@@ -58,16 +60,11 @@ def read_account():
 
 
 def run_codex(rows):
-    """One isolated Codex process: empty folder, read-only sandbox, no user config, MCP servers or web search."""
     with tempfile.TemporaryDirectory() as tmp:
-        work, schema, result = os.path.join(tmp, "w"), os.path.join(tmp, "schema.json"), os.path.join(tmp, "result.json")
+        work, result = os.path.join(tmp, "w"), os.path.join(tmp, "result.json")
         os.mkdir(work)
-        with open(schema, "w") as f:
-            json.dump(L.SCHEMA, f)
-        cmd = ["codex", "exec", "-m", a.model, "-c", 'model_reasoning_effort="low"', "-c", 'web_search="disabled"',
-               "--disable", "multi_agent", "--disable", "apps", "--ignore-user-config", "--ignore-rules", "--ephemeral", "--skip-git-repo-check",
-               "-s", "read-only", "-C", work, "--output-schema", schema, "-o", result, "--json", "-"]
-        r = subprocess.run(cmd, input=L.build_prompt(rows), capture_output=True, text=True, timeout=a.timeout)
+        r = subprocess.run(L.codex_command(a.model, a.effort, work, SCHEMA_FILE, result, INSTRUCTIONS_FILE), input=L.payload(rows),
+                           capture_output=True, text=True, timeout=a.timeout)
         usage = L.usage_from_events(r.stdout)
         if r.returncode != 0 or not os.path.exists(result):
             raise RuntimeError(f"codex exit {r.returncode}: {(r.stderr or r.stdout)[-300:]}")
@@ -89,6 +86,13 @@ def run_anthropic(rows):
     return next(b.text for b in m.content if b.type == "text"), usage, cost
 
 
+# The same files for every batch give each run an identical prefix, which is what the prompt cache needs.
+_shared = tempfile.mkdtemp(prefix="hb-extract-")
+SCHEMA_FILE, INSTRUCTIONS_FILE = os.path.join(_shared, "schema.json"), os.path.join(_shared, "instructions.md")
+with open(SCHEMA_FILE, "w") as f:
+    json.dump(L.SCHEMA, f)
+with open(INSTRUCTIONS_FILE, "w") as f:
+    f.write(L.INSTRUCTIONS)
 RUN = run_codex if a.adapter == "codex" else run_anthropic
 done = L.load_done(a.out)
 for d in a.also_done:
@@ -140,7 +144,7 @@ def work(rows):
                 for k in st["tok"]:
                     st["tok"][k] += usage.get(k, 0)
             results = L.parse_results(text, rows)
-            L.write_result(a.out, [r["id"] for r in rows], results, dict(model=a.model, adapter=a.adapter, prompt_version=L.PROMPT_VERSION,
+            L.write_result(a.out, [r["id"] for r in rows], results, dict(model=a.model, effort=a.effort, adapter=a.adapter, prompt_version=L.PROMPT_VERSION,
                            batch_size=len(rows), usage=usage, spent=spent, seconds=round(time.time() - t, 1), attempt=attempt + 1))
             with lock:
                 st["ok"] += 1

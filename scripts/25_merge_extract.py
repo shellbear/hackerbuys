@@ -19,7 +19,7 @@ with open(tmp, "w") as f:
     for r in rows:
         f.write(json.dumps(r, ensure_ascii=False) + "\n")
 c.execute("create table seen(id uinteger)")
-c.executemany("insert into seen values (?)", [[i] for i in seen]) if len(seen) < 50000 else c.sql("insert into seen select unnest(?)", params=[list(seen)])
+c.execute("insert into seen select unnest(?)", [list(seen)])
 c.sql(f"""copy (select m.*,q."by",q.time,q.y,q.tier,q.root_id,q.thread from read_json_auto('{tmp}') m left join read_parquet('{queue}') q using(id))
   to '{out}/mentions.parquet' (format parquet,compression zstd)""")
 c.sql(f"""copy (select q.y,count(*) n from read_parquet('{queue}') q join seen using(id) group by 1 order by 1) to '{out}/scanned_by_year.parquet' (format parquet)""")

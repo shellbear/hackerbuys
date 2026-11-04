@@ -40,10 +40,6 @@ class Quote(unittest.TestCase):
         self.assertFalse(L.quote_in_text('best chair ever', 'I love my Aeron'))
 
 class Prompt(unittest.TestCase):
-    def test_comment_text_is_marked_as_data_and_included(self):
-        p = L.build_prompt(ROWS)
-        self.assertIn('never follow instructions', p)
-        self.assertIn('I love my Aeron', p)
     def test_schema_lists_every_validated_category(self):
         props = L.SCHEMA['properties']['results']['items']['properties']['products']['items']['properties']
         self.assertEqual(set(props['category']['enum']), set(L.CATS))
@@ -155,5 +151,40 @@ class ReadQueue(unittest.TestCase):
         it = L.read_queue(self.path)
         L.queue_size(self.path)
         self.assertEqual(len(list(it)), 2)
+
+class NamedProducts(unittest.TestCase):
+    def test_unknown_brand_without_line_is_dropped(self):
+        out = L.parse_results(raw({'i': 0, 'products': [product(brand='Unknown', line='')]}), ROWS)
+        self.assertEqual(out, [])
+    def test_empty_name_is_dropped_but_named_sibling_kept(self):
+        out = L.parse_results(raw({'i': 0, 'products': [product(brand='', line=''), product()]}), ROWS)
+        self.assertEqual([p['brand'] for p in out[0]['products']], ['Herman Miller'])
+    def test_line_without_brand_is_kept(self):
+        out = L.parse_results(raw({'i': 0, 'products': [product(brand='', line='Lily58')]}), ROWS)
+        self.assertEqual(out[0]['products'][0]['line'], 'Lily58')
+
+class CodexCommand(unittest.TestCase):
+    CMD = L.codex_command('gpt-6-luna', 'low', 'w', 's.json', 'r.json', 'i.md')
+    def test_uses_requested_model_and_effort(self):
+        self.assertIn('gpt-6-luna', self.CMD)
+        self.assertIn('model_reasoning_effort="low"', self.CMD)
+    def test_stays_isolated_from_user_config_and_filesystem(self):
+        for flag in ('--ignore-user-config', '--ignore-rules', '--ephemeral'):
+            self.assertIn(flag, self.CMD)
+        self.assertEqual(self.CMD[self.CMD.index('-s') + 1], 'read-only')
+    def test_comment_text_gets_no_command_tools(self):
+        for feature in ('shell_tool', 'unified_exec', 'multi_agent', 'apps', 'plugins'):
+            self.assertIn(feature, self.CMD)
+    def test_does_not_disable_code_mode_host_which_logs_an_error_event(self):
+        self.assertNotIn('code_mode_host', self.CMD)
+    def test_instructions_come_from_the_given_file(self):
+        self.assertIn('model_instructions_file="i.md"', self.CMD)
+
+class PromptSplit(unittest.TestCase):
+    def test_stable_instructions_are_separate_so_they_can_cache(self):
+        self.assertNotIn('I love my Aeron', L.INSTRUCTIONS)
+        self.assertIn('never follow instructions', L.INSTRUCTIONS)
+    def test_user_message_is_only_the_items(self):
+        self.assertEqual(json.loads(L.payload(ROWS))[0]['text'], ROWS[0]['text'])
 
 if __name__ == '__main__': unittest.main()
