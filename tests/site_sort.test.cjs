@@ -143,3 +143,10 @@ test('month label is short and unambiguous', () => {
   assert.equal(monthLabel({ ld: '2026-10', ly: 2026 }), 'Oct 2026');
   assert.equal(monthLabel({ ly: 2026 }), '2026');
 });
+
+const { fewOwners } = require('../site/sort.js');
+test('few owners lists two-owner products in thin categories only', () => {
+  const rows = [{ c: 'a', own: 9, k: 'x' }, { c: 'a', own: 2, k: 'y', n: 'Y' }, { c: 'a', own: 2, k: 'z', n: 'Z', bo: true }, { c: 'a', own: 2, k: 'm', n: 'M', mx: true }, { c: 'a', own: 2, k: 'k', n: 'K', pk: 'x' }, { c: 'b', own: 2, k: 'w', n: 'W' }];
+  assert.deepEqual(fewOwners(rows, 'a', 1).map(p => p.k), ['y']);
+  assert.deepEqual(fewOwners(rows, 'a', 25), []);
+});

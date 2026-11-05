@@ -59,6 +59,11 @@
   }
   const MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
   const monthLabel = p => (p.ld ? `${MONTHS[Number(p.ld.slice(5)) - 1]} ${p.ld.slice(0, 4)}` : String(p.ly));
-  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts, categorySummary, monthLabel };
+  const THIN_CATEGORY = 20, FEW_OWNERS = 2;
+  function fewOwners(products, cat, rankedCount) {
+    if (rankedCount >= THIN_CATEGORY) return [];
+    return products.filter(p => p.c === cat && p.own === FEW_OWNERS && !p.bo && !p.pk && !p.mx).sort((a, b) => a.n.localeCompare(b.n));
+  }
+  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts, categorySummary, monthLabel, fewOwners };
   if (typeof module !== 'undefined') module.exports = api; else root.TableSort = api;
 })(this);

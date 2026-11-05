@@ -70,6 +70,41 @@ def month_label(ym):
     return f"{_MONTHS[int(month) - 1]} {year}"
 
 
+_LIGHT_TYPE = re.compile(r"\b(lamps?|bulbs?|light bars?|monitor lights?|desk lights?|smart lights?|smart lighting|lighting|led strips?|monitor arms?|desk mats?)\b", re.I)
+_NOT_DESK_LIGHT = re.compile(r"\b(bike|bicycle|flashlight|headlamp|car|vehicle|torch)\b", re.I)
+_LIGHT_NAME = re.compile(r"\b(philips hue|hue|lifx|nanoleaf|tradfri|screenbar|ergotron|monitor arm)\b", re.I)
+THIN_CATEGORY = 20
+FEW_OWNERS = 2
+MIXED_MIN_TYPED = 3
+MIXED_TOP_SHARE = 0.6
+
+
+def refile(category, product_type, brand, line):
+    """Keep lights and desk gear together: product type decides, with names covering the earlier sample, which has no type."""
+    kind = product_type or ""
+    if _NOT_DESK_LIGHT.search(kind):
+        return category
+    if _LIGHT_TYPE.search(kind) or (not kind and _LIGHT_NAME.search(f"{brand} {line}")):
+        return "lighting_desk"
+    return category
+
+
+def mixed_brand(categories):
+    """A brand-level entry spread across categories can't be ranked as one thing. Lodge stays; Samsung doesn't."""
+    kinds = [c for c in categories if c]
+    if len(kinds) < MIXED_MIN_TYPED:
+        return False
+    top = max(kinds.count(k) for k in set(kinds))
+    return top / len(kinds) < MIXED_TOP_SHARE
+
+
+def line_for(brand, line, category):
+    """Comments often say just "BenQ" for its monitor light, which would otherwise file it with the brand's monitors."""
+    if not (line or "").strip() and (brand or "").strip().lower() == "benq" and category == "lighting_desk":
+        return "ScreenBar"
+    return line
+
+
 def indexable(p):
     """Fewer, stronger pages: a brand with no product line, or a page with a handful of verdicts, says too little to rank."""
     return p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("nl") and p["pos"] + p["neg"] >= MIN_INDEX_VERDICTS
@@ -157,7 +192,7 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 class Site:
     def __init__(self, cats, tags, coverage, products=()):
         self.cats, self.tags, self.coverage = cats, tags, coverage
-        self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("pk")]
+        self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("pk") and not p.get("mx")]
 
     def _nav(self, cat=None, tag=None):
         count = lambda key: sum(p["c"] == key for p in self.live)
@@ -199,7 +234,7 @@ class Site:
             out.append(f'<tr><td class="nm"><a href="/p/{e(p["k"])}">{e(p["n"])}</a>{small}{chips}</td><td class="ty">{p["pos"]} positive, {p["neu"]} neutral, {p["neg"]} negative</td><td>{p["own"]}</td><td class="hide-s">{happy_pct(p)}</td><td class="hide-s">{month_label(p["ld"]) if p.get("ld") else p["ly"]}</td></tr>')
         return "".join(out)
 
-    def list_page(self, rows, cat=None, tag=None):
+    def list_page(self, rows, cat=None, tag=None, few=()):
         base = cat_path(cat) if cat else tag_path(tag) if tag else "/"
         name = self.cats.get(cat, cat) if cat else self.tags[tag][0] if tag else None
         top = ", ".join(p["n"] for p in rows[:3])
@@ -227,8 +262,14 @@ class Site:
             summary = f'<p class="note" id="summary">Most loved by owners: {join(loved)}. Most owned: {join(owned)}.</p>'
             items = [{"@type": "ListItem", "position": i + 1, "url": f"{ORIGIN}/p/{p['k']}", "name": p["n"]} for i, p in enumerate(rows[:ITEM_LIST_SIZE])]
             extra = f'<script type="application/ld+json">{embed_json({"@context": "https://schema.org", "@type": "ItemList", "name": heading, "itemListElement": items})}</script>'
-        main = f'<h1>{e(heading)}</h1>{lede}{summary}<div class="views">{tabs}</div><p class="note">{e(NOTE)}</p>{table}'
+        main = f'<h1>{e(heading)}</h1>{lede}{summary}<div class="views">{tabs}</div><p class="note">{e(NOTE)}</p>{table}{self._few(few)}'
         return self._page(title, desc, base, main, cat=cat, tag=tag, extra=extra)
+
+    def _few(self, few):
+        if not few:
+            return ""
+        items = "".join(f'<li><a href="/p/{e(p["k"])}">{e(p["n"])}</a><span>{p["own"]}</span></li>' for p in few)
+        return f'<h2 id="few">Few owners so far</h2><ul class="moves">{items}</ul>'
 
     def _comment(self, c):
         cl = {"negative": "n", "neutral": ""}.get(c["s"], "p")

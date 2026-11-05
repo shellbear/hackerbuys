@@ -6,12 +6,12 @@ const slug=k=>k.replace(/_/g,'-');const MIN=3;let DB;const $=s=>document.querySe
 function el(t,a={},...k){const e=document.createElement(t);for(const[n,v]of Object.entries(a)){if(v==null)continue;if(n==='class')e.className=v;else if(n.startsWith('on'))e.addEventListener(n.slice(2),v);else e.setAttribute(n,v)}for(const c of k.flat())if(c!=null)e.append(c);return e}
 function tally(p,neu,n,max=120){const t=p+neu+n,w=el('div',{class:'tally',role:'img','aria-label':`${p} positive, ${neu} neutral, ${n} negative`}),s=t>max?max/t:1;
  const add=(c,x)=>{for(let i=0;i<Math.round(x*s);i++)w.append(el('i',{class:c}))};add('p',p);add('',neu);add('n',n);if(s<1)w.append(el('b',{},'scaled to fit'));return w}
-const scored=(view,cat,tag)=>{let r=DB.products.filter(p=>!p.bo&&!p.pk&&(!cat||p.c===cat)&&(!tag||p.tags.includes(tag)));
+const scored=(view,cat,tag)=>{let r=DB.products.filter(p=>!p.bo&&!p.pk&&!p.mx&&(!cat||p.c===cat)&&(!tag||p.tags.includes(tag)));
  if(view==='recent')return r.filter(p=>p.rown>=Math.max(2,MIN-1)).sort((a,b)=>b.rw-a.rw||b.rown-a.rown);
  if(view==='owned')return r.filter(p=>p.own>=MIN).sort((a,b)=>b.own-a.own||b.w-a.w);
  if(view==='long')return r.filter(p=>p.lh>=1).sort((a,b)=>b.lh-a.lh||(b.maxt||0)-(a.maxt||0));
  return r.filter(p=>p.own>=MIN).sort((a,b)=>b.w-a.w||b.own-a.own)};
-function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MIN&&!p.bo&&!p.pk);
+function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MIN&&!p.bo&&!p.pk&&!p.mx);
  const tagLink=([k,n])=>el('a',{href:`/t/${slug(k)}`,'aria-current':curTag===k?'page':null},TAGS[k][0],el('span',{},String(n)));
  const tags=Object.keys(TAGS).map(k=>[k,live.filter(p=>p.tags.includes(k)).length]).filter(x=>x[1]>0);
  c.replaceChildren(el('a',{href:'/','aria-current':cur||curTag?null:'page'},'All categories',el('span',{},String(live.length))),
@@ -19,6 +19,8 @@ function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MI
  el('p',{class:'navh'},'Verdict tags'),...tags.filter(x=>QUAL.includes(x[0])).map(tagLink),el('p',{class:'navh'},'Smaller groups'),...tags.filter(x=>!QUAL.includes(x[0])).map(tagLink))}
 function chips(tags,cur){return tags&&tags.length?el('span',{class:'chips'},tags.filter(t=>t!==cur&&TAGS[t]).map(t=>el('a',{href:`/t/${slug(t)}`,title:TAGS[t][1]},TAGS[t][0]))):null}
 const PAGE=100,VERDICT_TIP='Sorts by how confidently positive owners are, adjusted for how many gave a verdict. Reverse it to see the most disliked.',HAPPY_TIP='Positive verdicts as a share of positive and negative. Neutral verdicts are not counted.';let SORT=null,SHOW=PAGE;
+function fewSection(cat,n){const few=TableSort.fewOwners(DB.products,cat,scored('loved',cat).length);if(!few.length)return null;
+ return el('div',{},el('h2',{id:'few'},'Few owners so far'),el('ul',{class:'moves'},few.map(p=>el('li',{},el('a',{href:`/p/${p.k}`},p.n),el('span',{},String(p.own))))))}
 function summaryLine(cat){const s=TableSort.categorySummary(scored('loved',cat));if(!s)return null;
  const links=ps=>ps.flatMap((p,i)=>[i?', ':null,el('a',{href:`/p/${p.k}`},p.n)]);
  return el('p',{class:'note',id:'summary'},'Most loved by owners: ',...links(s.loved),'. Most owned: ',...links(s.owned),'.')}
@@ -36,6 +38,7 @@ function list(cat,view='loved',tag,keep){if(!keep){SORT=null;SHOW=PAGE}nav(cat,t
  el('tbody',{},r.map(p=>{const P=view==='recent'?[p.rpos,p.rown-p.rpos-p.rneg,p.rneg]:[p.pos,p.neu,p.neg],tot=P[0]+P[2];
   return el('tr',{},el('td',{class:'nm'},el('a',{href:`/p/${p.k}`},p.n),cat?null:el('small',{},CATS[p.c]||p.c),chips(p.tags,tag)),el('td',{class:'ty'},tally(...P,60)),
   el('td',{},String(view==='long'?p.lh:view==='recent'?p.rown:p.own)),view==='long'?el('td',{},p.maxt?`${p.maxt} yrs`:'–'):el('td',{class:'hide-s'},tot>=3?`${Math.round(100*P[0]/tot)}%`:'–'),el('td',{class:'hide-s'},TableSort.monthLabel(p)))}))):el('p',{class:'empty'},'No products have enough owners here yet. Try another ranking or category.'),
+ cat?fewSection(cat,ranked.length):null,
  all.length>r.length?el('p',{class:'more'},el('button',{type:'button',onclick(){SHOW=all.length;const y=window.scrollY;list(cat,view,tag,true);window.scrollTo(0,y)}},`Show all ${all.length.toLocaleString()} products`)):null].filter(Boolean));
  if(!keep)window.scrollTo(0,0)}
 function mark(terms,txt){const b=el('blockquote',{});const w=[...new Set(terms.map(x=>(x||'').trim()).filter(x=>x.length>1))].sort((x,y)=>y.length-x.length).map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+'));if(!w.length){b.textContent=txt;return b}

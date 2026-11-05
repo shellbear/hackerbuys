@@ -221,4 +221,54 @@ class LastMention(unittest.TestCase):
         self.assertIn('>2026<', SITE.list_page([E], cat='keyboards'))
 
 
+
+class Refiling(unittest.TestCase):
+    def test_lights_move_by_product_type(self):
+        for t in ('smart bulb', 'desk lamp', 'monitor light bar', 'LED bulb', 'smart lighting system'):
+            self.assertEqual(R.refile('smart_home', t, 'Acme', ''), 'lighting_desk', t)
+    def test_desk_gear_moves_by_product_type(self):
+        self.assertEqual(R.refile('desks', 'monitor arm', 'Ergotron', 'LX'), 'lighting_desk')
+    def test_portable_and_vehicle_lights_stay_put(self):
+        for t in ('bicycle light', 'bike light', 'flashlight', 'headlamp', 'bicycle radar light'):
+            self.assertEqual(R.refile('bikes_mobility', t, 'Garmin', 'Varia'), 'bikes_mobility', t)
+    def test_lightning_cables_and_light_phone_are_not_lights(self):
+        self.assertEqual(R.refile('power', 'lightning cable', 'Apple', 'Lightning'), 'power')
+        self.assertEqual(R.refile('phones', 'minimalist phone', 'Light', 'Phone'), 'phones')
+    def test_known_names_move_when_the_earlier_sample_has_no_type(self):
+        for brand, line in (('Philips', 'Hue'), ('Ergotron', 'Monitor arm'), ('BenQ', 'ScreenBar'), ('LIFX', '')):
+            self.assertEqual(R.refile('smart_home', '', brand, line), 'lighting_desk', brand)
+    def test_other_products_are_unchanged(self):
+        self.assertEqual(R.refile('keyboards', 'mechanical keyboard', 'Keychron', 'Q1'), 'keyboards')
+
+class MixedBrands(unittest.TestCase):
+    def test_brand_across_categories_is_mixed(self):
+        self.assertTrue(R.mixed_brand(['phones', 'tv_streaming', 'home_appliances', 'monitors']))
+    def test_brand_in_one_category_is_not_mixed(self):
+        self.assertFalse(R.mixed_brand(['kitchen_coffee'] * 4))
+    def test_mostly_one_category_is_not_mixed(self):
+        self.assertFalse(R.mixed_brand(['pc_components'] * 4 + ['desktops']))
+    def test_too_little_evidence_is_not_mixed(self):
+        self.assertFalse(R.mixed_brand(['tv_streaming', 'phones']))
+    def test_mixed_brand_is_left_out_of_rankings_and_totals(self):
+        s = R.Site(CATS, TAGS, 'x', [dict(E), dict(E, k='philips', mx=True)])
+        self.assertEqual(len(s.live), 1)
+
+class BrandAsProduct(unittest.TestCase):
+    def test_benq_light_is_a_screenbar(self):
+        self.assertEqual(R.line_for('BenQ', '', 'lighting_desk'), 'ScreenBar')
+    def test_named_line_is_kept(self):
+        self.assertEqual(R.line_for('BenQ', 'WiT', 'lighting_desk'), 'WiT')
+    def test_benq_monitor_is_unchanged(self):
+        self.assertEqual(R.line_for('BenQ', '', 'monitors'), '')
+
+class FewOwners(unittest.TestCase):
+    THIN = dict(E, k='thin', n='Thin Product', own=2, pos=2, neg=0)
+    def test_thin_category_lists_products_with_two_owners(self):
+        h = SITE.list_page([E], cat='keyboards', few=[self.THIN])
+        self.assertIn('Few owners so far', h)
+        self.assertIn('href="/p/thin"', h)
+    def test_no_section_without_products(self):
+        self.assertNotIn('Few owners so far', SITE.list_page([E], cat='keyboards', few=[]))
+
+
 if __name__ == '__main__': unittest.main()

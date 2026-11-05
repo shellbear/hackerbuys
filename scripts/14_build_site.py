@@ -105,9 +105,11 @@ ms=[];bad=0
 def add_products(cid,products,M):
     for p in products:
         if not L.keep_mention(p): continue
+        cat=SR.refile(recat(p.get('category'),p.get('brand'),p.get('line')),p.get('product_type'),p.get('brand'),p.get('line'))
+        p=dict(p,line=SR.line_for(p.get('brand'),p.get('line'),cat))
         cb,cl=canon(p.get('brand'),p.get('line'))
         if not cl and p.get('model'): cb,cl=canon(p.get('brand'),p.get('model'))
-        p=dict(p,category=recat(p.get('category'),p.get('brand'),p.get('line')),topic=topic(p.get('brand'),p.get('line')))
+        p=dict(p,category=cat,topic=topic(p.get('brand'),p.get('line')))
         ms.append(dict(p,id=cid,by=M['by'],time=M['time'][:10],y=int(M['time'][:4]),tier=M['tier'],root=M['root_id'],title=M['root_title'],cb=cb,cl=cl,key=norm_key(cb,cl),disp=display(cb,cl,(p.get('brand') or '').strip())))
 for f in sorted(glob.glob(f'{R}/out/*.jsonl')):
     for l in open(f):
@@ -230,6 +232,7 @@ def make(k,v,name=None,parent=None,parent_name=None):
     e['tags']=list(why)
     if parent: e.update(pk=parent,pn=parent_name)
     if not parent and not v[0]['cl']: e['nl']=True
+    if e.get('nl') and SR.mixed_brand([x.get('category') for x in v]): e['mx']=True
     index.append(e)
     seen=set();cs=[]
     for x in sorted(v,key=lambda x:(-(x['tenure_years'] or 0),x['time'])):
@@ -274,13 +277,15 @@ span=None if not FULL else str(min(FULL)) if len(FULL)==1 else f"{min(FULL)} to 
 cover=f"Based on {len(meta):,} of about 41 million comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
 cats,tags=SR.read_meta('site/app.js')
 site=SR.Site(cats,tags,cover,index)
-ranked=sorted((p for p in index if p['own']>=3 and not p['bo'] and not p.get('pk')),key=lambda p:(-p['w'],-p['own']))
+ranked=sorted((p for p in index if p['own']>=3 and not p['bo'] and not p.get('pk') and not p.get('mx')),key=lambda p:(-p['w'],-p['own']))
 paths=['/']
 write('site/index.html',site.list_page(ranked))
 write('site/404.html',site.not_found())
 for k in cats:
     r=[p for p in ranked if p['c']==k]
-    if r: write(f'site/c/{SR.slug(k)}.html',site.list_page(r,cat=k));paths.append(SR.cat_path(k))
+    few=[] if len(r)>=SR.THIN_CATEGORY else sorted((p for p in index if p['c']==k and p['own']==SR.FEW_OWNERS and not p['bo'] and not p.get('pk') and not p.get('mx')),key=lambda p:p['n'].lower())
+    if r or few: write(f'site/c/{SR.slug(k)}.html',site.list_page(r,cat=k,few=few))
+    if r: paths.append(SR.cat_path(k))
 for k in tags:
     r=[p for p in ranked if k in p['tags']]
     if r: write(f'site/t/{SR.slug(k)}.html',site.list_page(r,tag=k));paths.append(SR.tag_path(k))
