@@ -211,4 +211,14 @@ class CategoryContent(unittest.TestCase):
         self.assertNotIn('id="summary"', SITE.list_page(self.ROWS))
 
 
+
+class LastMention(unittest.TestCase):
+    def test_month_and_year_are_formatted(self):
+        self.assertEqual(R.month_label('2026-10'), 'Oct 2026')
+    def test_rows_show_month_and_year(self):
+        self.assertIn('Oct 2026', SITE.list_page([dict(E, ld='2026-10')], cat='keyboards'))
+    def test_rows_fall_back_to_year(self):
+        self.assertIn('>2026<', SITE.list_page([E], cat='keyboards'))
+
+
 if __name__ == '__main__': unittest.main()

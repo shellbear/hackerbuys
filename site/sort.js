@@ -10,7 +10,7 @@
     count,
     happy,
     longest: p => p.maxt,
-    last: p => p.ly,
+    last: p => (p.ld ? Number(p.ld.replace('-', '')) : p.ly * 100),
     verdict: (p, view) => (view === 'recent' ? p.rw : p.w),
   };
   const defaultDir = key => (key === 'name' ? 'asc' : 'desc');
@@ -57,6 +57,8 @@
     if (rows.length < 3) return null;
     return { loved: [...rows].sort((a, b) => b.w - a.w).slice(0, 3), owned: [...rows].sort((a, b) => b.own - a.own).slice(0, 3) };
   }
-  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts, categorySummary };
+  const MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
+  const monthLabel = p => (p.ld ? `${MONTHS[Number(p.ld.slice(5)) - 1]} ${p.ld.slice(0, 4)}` : String(p.ly));
+  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts, categorySummary, monthLabel };
   if (typeof module !== 'undefined') module.exports = api; else root.TableSort = api;
 })(this);

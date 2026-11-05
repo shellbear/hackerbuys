@@ -62,6 +62,14 @@ def model_name(parent, label):
     return f"{' '.join(parent.split()[:-1])} {label}".strip() if label.lower().startswith(last) else f"{parent} {label}"
 
 
+_MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+
+
+def month_label(ym):
+    year, month = ym.split("-")
+    return f"{_MONTHS[int(month) - 1]} {year}"
+
+
 def indexable(p):
     """Fewer, stronger pages: a brand with no product line, or a page with a handful of verdicts, says too little to rank."""
     return p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("nl") and p["pos"] + p["neg"] >= MIN_INDEX_VERDICTS
@@ -188,7 +196,7 @@ class Site:
             small = f"<small>{e(self.cats.get(p['c'], p['c']))}</small>" if show_cat else ""
             chips = "".join(f'<a href="{e(tag_path(t))}">{e(self.tags[t][0])}</a>' for t in p["tags"] if t in self.tags)
             chips = f'<span class="chips">{chips}</span>' if chips else ""
-            out.append(f'<tr><td class="nm"><a href="/p/{e(p["k"])}">{e(p["n"])}</a>{small}{chips}</td><td class="ty">{p["pos"]} positive, {p["neu"]} neutral, {p["neg"]} negative</td><td>{p["own"]}</td><td class="hide-s">{happy_pct(p)}</td><td class="hide-s">{p["ly"]}</td></tr>')
+            out.append(f'<tr><td class="nm"><a href="/p/{e(p["k"])}">{e(p["n"])}</a>{small}{chips}</td><td class="ty">{p["pos"]} positive, {p["neu"]} neutral, {p["neg"]} negative</td><td>{p["own"]}</td><td class="hide-s">{happy_pct(p)}</td><td class="hide-s">{month_label(p["ld"]) if p.get("ld") else p["ly"]}</td></tr>')
         return "".join(out)
 
     def list_page(self, rows, cat=None, tag=None):

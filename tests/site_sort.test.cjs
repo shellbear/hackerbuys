@@ -132,3 +132,14 @@ test('happy percentage is hidden under three verdicts and sorts last', () => {
   const t = [P('thin', 3, 2, 0, 2026), P('solid', 9, 3, 1, 2026)];
   assert.deepEqual(names(sortRows(t, 'happy', 'desc', 'loved')), ['solid', 'thin']);
 });
+
+const { monthLabel } = require('../site/sort.js');
+test('last mention sorts by month, not just year', () => {
+  const t = [P('jan', 5, 5, 0, 2026, { ld: '2026-01' }), P('oct', 5, 5, 0, 2026, { ld: '2026-10' }), P('old', 5, 5, 0, 2019, { ld: '2019-12' })];
+  assert.deepEqual(names(sortRows(t, 'last', 'desc', 'loved')), ['oct', 'jan', 'old']);
+  assert.deepEqual(names(sortRows(t, 'last', 'asc', 'loved')), ['old', 'jan', 'oct']);
+});
+test('month label is short and unambiguous', () => {
+  assert.equal(monthLabel({ ld: '2026-10', ly: 2026 }), 'Oct 2026');
+  assert.equal(monthLabel({ ly: 2026 }), '2026');
+});
