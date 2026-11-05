@@ -6,12 +6,12 @@ const slug=k=>k.replace(/_/g,'-');const MIN=3;let DB;const $=s=>document.querySe
 function el(t,a={},...k){const e=document.createElement(t);for(const[n,v]of Object.entries(a)){if(v==null)continue;if(n==='class')e.className=v;else if(n.startsWith('on'))e.addEventListener(n.slice(2),v);else e.setAttribute(n,v)}for(const c of k.flat())if(c!=null)e.append(c);return e}
 function tally(p,neu,n,max=120){const t=p+neu+n,w=el('div',{class:'tally',role:'img','aria-label':`${p} positive, ${neu} neutral, ${n} negative`}),s=t>max?max/t:1;
  const add=(c,x)=>{for(let i=0;i<Math.round(x*s);i++)w.append(el('i',{class:c}))};add('p',p);add('',neu);add('n',n);if(s<1)w.append(el('b',{},'scaled to fit'));return w}
-const scored=(view,cat,tag)=>{let r=DB.products.filter(p=>!p.bo&&(!cat||p.c===cat)&&(!tag||p.tags.includes(tag)));
+const scored=(view,cat,tag)=>{let r=DB.products.filter(p=>!p.bo&&!p.pk&&(!cat||p.c===cat)&&(!tag||p.tags.includes(tag)));
  if(view==='recent')return r.filter(p=>p.rown>=Math.max(2,MIN-1)).sort((a,b)=>b.rw-a.rw||b.rown-a.rown);
  if(view==='owned')return r.filter(p=>p.own>=MIN).sort((a,b)=>b.own-a.own||b.w-a.w);
  if(view==='long')return r.filter(p=>p.lh>=1).sort((a,b)=>b.lh-a.lh||(b.maxt||0)-(a.maxt||0));
  return r.filter(p=>p.own>=MIN).sort((a,b)=>b.w-a.w||b.own-a.own)};
-function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MIN&&!p.bo);
+function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MIN&&!p.bo&&!p.pk);
  const tagLink=([k,n])=>el('a',{href:`/t/${slug(k)}`,'aria-current':curTag===k?'page':null},TAGS[k][0],el('span',{},String(n)));
  const tags=Object.keys(TAGS).map(k=>[k,live.filter(p=>p.tags.includes(k)).length]).filter(x=>x[1]>0);
  c.replaceChildren(el('a',{href:'/','aria-current':cur||curTag?null:'page'},'All categories',el('span',{},String(live.length))),
@@ -50,10 +50,11 @@ function product(p){const m=$('#main');let f='all',sort='ten';const wrap=el('div
  const opt=[['all',p.nc>p.cs.length?`${p.cs.length} of ${p.nc}`:`All ${p.cs.length}`],['good','Positive'],['bad','Negative'],['long','Owned 3+ years']];
  const fb=opt.map(([key,l])=>[key,el('button',{type:'button',onclick(){f=key;draw()}},l)]);
  const sel=el('select',{'aria-label':'Sort comments',onchange(e){sort=e.target.value;draw()}},el('option',{value:'ten'},'Longest owned first'),el('option',{value:'new'},'Newest first'),el('option',{value:'old'},'Oldest first'));
- m.replaceChildren(...[el('p',{class:'crumb'},el('a',{href:`/c/${slug(p.c)}`},CATS[p.c]||p.c)),el('h1',{},p.n),
+ m.replaceChildren(...[el('p',{class:'crumb'},el('a',{href:`/c/${slug(p.c)}`},CATS[p.c]||p.c),p.pk?' · ':null,p.pk?el('a',{href:`/p/${p.pk}`},p.pn||'All models'):null),el('h1',{},p.n),
  p.tags.length?el('ul',{class:'whys'},p.tags.filter(t=>TAGS[t]).map(t=>el('li',{},el('a',{href:`/t/${slug(t)}`},TAGS[t][0]),p.why[t]?el('span',{},p.why[t]):null))):null,el('div',{class:'big'},tally(p.pos,p.neu,p.neg,120)),
  el('div',{class:'verdict'},el('div',{},el('b',{},String(p.own)),'owners with an opinion'),el('div',{},el('b',{},p.pos+p.neg?`${Math.round(100*p.pos/(p.pos+p.neg))}%`:'–'),'of verdicts positive'),el('div',{},el('b',{},`${p.rpos}/${p.rneg}`),'positive/negative since 2024'),p.maxt?el('div',{},el('b',{},`${p.maxt} yrs`),'longest happy owner'):null,el('div',{},el('b',{},String(p.lh)),'happy after 3+ years')),
  p.gens.length?[el('h2',{},'By generation'),el('table',{},el('thead',{},el('tr',{},el('th',{},'Generation'),el('th',{},'Verdict'),el('th',{},'Owners'))),el('tbody',{},p.gens.map(([g,n,a,b])=>el('tr',{},el('td',{class:'nm'},g),el('td',{class:'ty'},tally(a,n-a-b,b,60)),el('td',{},String(n))))))]:null,
+ p.models&&p.models.length?[el('h2',{},'Models'),el('ul',{class:'moves'},p.models.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),el('span',{},String(c)))))]:null,
  p.to.length||p.fr.length?[el('h2',{},'Where people moved'),el('div',{class:'two'},p.to.length?el('div',{},el('p',{class:'note'},'Left this for'),el('ul',{class:'moves'},p.to.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),el('span',{},String(c)))))):null,p.fr.length?el('div',{},el('p',{class:'note'},'Came here from'),el('ul',{class:'moves'},p.fr.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),el('span',{},String(c)))))):null)]:null,
  el('h2',{},'What owners wrote'),el('div',{class:'filters'},fb.map(x=>x[1]),sel),wrap].flat().filter(Boolean));draw()}
 // Old links used #/ routes; send them to the real URL.

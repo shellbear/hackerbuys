@@ -7,6 +7,7 @@ import extract_lib as L
 import site_render as SR
 import datetime as dt
 MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
+MIN_MODEL_OWNERS,MAX_MODELS_LISTED=3,20
 QUEUE,OUT='data/extract/queue.parquet','extract/out'
 R='analysis/run41k'
 text={};meta={}
@@ -187,8 +188,7 @@ GENERIC=set('apple dell lenovo asus hp acer sony samsung logitech microsoft goog
 index=[]
 PUB={k for k,v in G.items() if len({x['by'] for x in v if x['first_hand']})>=MIN_PAGE_OWNERS}
 pages=[]
-for k,v in G.items():
-    if k not in PUB: continue
+def make(k,v,name=None,parent=None,parent_name=None):
     v=sorted(v,key=lambda x:x['time'])
     cat=collections.Counter(x['category'] for x in v).most_common(1)[0][0]
     latest={}
@@ -211,13 +211,14 @@ for k,v in G.items():
             if x['stance'] in('recommend','positive'): gens[g][1].add(x['by'])
             if x['stance']=='negative': gens[g][2].add(x['by'])
     gl=sorted(sorted(([g,len(a),len(b),len(c)] for g,(a,b,c) in gens.items()),key=lambda r:-r[1])[:12],key=lambda r:(0 if re.fullmatch(r'(19|20)\d\d',r[0]) else 1 if re.match(r'M\d',r[0]) else 2,r[0]))
-    brand_only=(not v[0]['cl']) and (v[0]['cb'] in GENERIC or not v[0]['cb'])
-    to=sorted(((names[t],t,len(s),len(moved[t].get(k,()))) for t,s in moved[k].items() if t in PUB),key=lambda r:-r[2])[:8]
-    fr=sorted(((names[f],f,len(moved[f][k]),len(moved[k].get(f,()))) for f in moved if k in moved[f] and f in PUB),key=lambda r:-r[2])[:8]
-    e=dict(k=k,n=names[k],c=cat,own=len(own),pos=pos,neg=neg,neu=neu,w=round(wilson(pos,pos+neg),4),rown=len(rec),rpos=rp,rneg=rn,rw=round(wilson(rp,rp+rn),4),lh=lh,maxt=max(by_ten.values()) if by_ten else None,still=still,fy=v[0]['y'],ly=v[-1]['y'],nc=len({x['id'] for x in v}),bo=brand_only)
+    brand_only=not parent and (not v[0]['cl']) and (v[0]['cb'] in GENERIC or not v[0]['cb'])
+    to=[] if parent else sorted(((names[t],t,len(s),len(moved[t].get(k,()))) for t,s in moved[k].items() if t in PUB),key=lambda r:-r[2])[:8]
+    fr=[] if parent else sorted(((names[f],f,len(moved[f][k]),len(moved[k].get(f,()))) for f in moved if k in moved[f] and f in PUB),key=lambda r:-r[2])[:8]
+    e=dict(k=k,n=name or names[k],c=cat,own=len(own),pos=pos,neg=neg,neu=neu,w=round(wilson(pos,pos+neg),4),rown=len(rec),rpos=rp,rneg=rn,rw=round(wilson(rp,rp+rn),4),lh=lh,maxt=max(by_ten.values()) if by_ten else None,still=still,fy=v[0]['y'],ly=v[-1]['y'],nc=len({x['id'] for x in v}),bo=brand_only)
     e['ty']=[t for t,_ in collections.Counter((x.get('product_type') or '').strip().lower() for x in v if x.get('product_type')).most_common(2)]
-    why={} if brand_only else calc_tags(e,v,k,by_ten,gl)
+    why={} if brand_only or parent else calc_tags(e,v,k,by_ten,gl)
     e['tags']=list(why)
+    if parent: e.update(pk=parent,pn=parent_name)
     index.append(e)
     seen=set();cs=[]
     for x in sorted(v,key=lambda x:(-(x['tenure_years'] or 0),x['time'])):
@@ -225,7 +226,32 @@ for k,v in G.items():
         seen.add(x['id']);src=text[x['id']]
         cs.append(dict(id=x['id'],by=x['by'],d=x['time'],s=x['stance'],fh=x['first_hand'],ten=x['tenure_years'],sg=x['still_going'],m=x.get('model') or '',g=gen_label(x),sf=x.get('switched_from') or '',t=L.trim_text(src['text'],MAX_TEXT),th=x['title'] or '',root=x['root']))
     cs=L.pick_comments(cs,MAX_COMMENTS)
-    pages.append(dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why))
+    page=dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why)
+    pages.append(page)
+    return page
+parents={}
+groups=collections.defaultdict(list)
+for k,v in list(G.items()):
+    if k not in PUB: continue
+    parents[k]=make(k,v)
+    for x in v:
+        mk=SR.normalize_model(x.get('model'),x.get('line'))
+        if mk: groups[(x['cb'],mk) if SR.merges_across_lines(mk) else (k,mk)].append(x)
+# Largest groups first, so when two would share a name the better-supported page keeps it.
+taken={p['n'] for p in parents.values()}
+for (_,mk),xs in sorted(groups.items(),key=lambda kv:-len(kv[1])):
+    if len({x['by'] for x in xs if x['first_hand']})<MIN_MODEL_OWNERS: continue
+    home=collections.Counter(x['key'] for x in xs if x['key'] in parents).most_common(1)
+    if not home: continue
+    k=home[0][0];page=parents[k]
+    label=collections.Counter(re.sub(r'\s+',' ',(x.get('model') or '')).strip() for x in xs).most_common(1)[0][0]
+    kid_name=SR.model_name(page['n'],label)
+    if kid_name in taken: continue
+    taken.add(kid_name)
+    kid=make(norm_key(k,mk),xs,name=kid_name,parent=k,parent_name=page['n'])
+    page.setdefault('models',[]).append([kid['n'],kid['k'],kid['own']])
+for page in parents.values():
+    if page.get('models'): page['models']=sorted(page['models'],key=lambda r:-r[2])[:MAX_MODELS_LISTED]
 json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL))),open('site/data/index.json','w'),ensure_ascii=False)
 # Real HTML pages: the content is in the file, and app.js adds sorting and filters on top.
 def write(path,body):
@@ -236,7 +262,7 @@ span=None if not FULL else str(min(FULL)) if len(FULL)==1 else f"{min(FULL)} to 
 cover=f"Based on {len(meta):,} of about 41 million comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
 cats,tags=SR.read_meta('site/app.js')
 site=SR.Site(cats,tags,cover,index)
-ranked=sorted((p for p in index if p['own']>=3 and not p['bo']),key=lambda p:(-p['w'],-p['own']))
+ranked=sorted((p for p in index if p['own']>=3 and not p['bo'] and not p.get('pk')),key=lambda p:(-p['w'],-p['own']))
 paths=['/']
 write('site/index.html',site.list_page(ranked))
 write('site/404.html',site.not_found())

@@ -1,0 +1,174 @@
+category	product	pattern
+lighting_desk	BenQ ScreenBar Halo	screenbar halo
+lighting_desk	BenQ ScreenBar	screenbar
+lighting_desk	Quntis monitor light	quntis
+lighting_desk	Dyson Solarcycle	solarcycle
+lighting_desk	Philips Hue	philips hue
+lighting_desk	Elgato Key Light	key light
+monitors	Dell UltraSharp	ultrasharp
+monitors	LG UltraFine	ultrafine
+monitors	Apple Studio Display	studio display
+monitors	Apple Pro Display XDR	pro display xdr
+monitors	Samsung Odyssey	samsung odyssey|odyssey g\d
+monitors	LG C2 OLED	lg c[1-4]\b
+monitors	ASUS ProArt	proart
+monitors	Dasung e-ink monitor	dasung
+keyboards	Keychron Q1	keychron q\d
+keyboards	Keychron K2	keychron k\d
+keyboards	Kinesis Advantage	kinesis advantage
+keyboards	ZSA Moonlander	moonlander
+keyboards	HHKB	hhkb|happy hacking
+keyboards	IBM Model M	model m\b
+keyboards	Topre Realforce	realforce
+keyboards	Logitech MX Keys	mx keys
+keyboards	Glove80	glove80
+keyboards	NuPhy	nuphy
+mice_trackpads	Logitech MX Master	mx master
+mice_trackpads	Logitech MX Ergo	mx ergo
+mice_trackpads	Apple Magic Trackpad	magic trackpad
+mice_trackpads	Kensington Expert	kensington expert|expert mouse
+mice_trackpads	Razer DeathAdder	deathadder
+mice_trackpads	Ploopy	ploopy
+chairs	Herman Miller Aeron	aeron
+chairs	Herman Miller Embody	embody chair|herman miller embody|hm embody
+chairs	Steelcase Leap	steelcase leap
+chairs	Steelcase Gesture	steelcase gesture
+chairs	Secretlab Titan	secretlab
+chairs	HAG Capisco	capisco
+chairs	IKEA Markus	ikea markus
+desks	Fully Jarvis	fully jarvis|jarvis desk
+desks	Uplift V2	uplift desk|uplift v2
+desks	IKEA Bekant	bekant
+desks	IKEA Idasen	idasen|idåsen
+desks	FlexiSpot	flexispot
+headphones	Sony WH-1000XM	wh-?1000xm\d|1000xm\d
+headphones	Bose QuietComfort	quietcomfort|bose qc
+headphones	AirPods Pro	airpods pro
+headphones	AirPods Max	airpods max
+headphones	Sennheiser HD 600	\bhd ?6[05]0\b
+headphones	Beyerdynamic DT 770	dt ?770|dt ?990
+headphones	Audio-Technica ATH-M50	ath-?m50
+headphones	Moondrop	moondrop
+audio_hifi	Sonos	sonos
+audio_hifi	KEF LS50	ls50
+audio_hifi	Schiit	schiit
+audio_hifi	Bose SoundLink	soundlink
+audio_hifi	Audioengine	audioengine
+laptops	MacBook Air M1	(macbook air|mba).{0,20}\bm1\b|\bm1\b.{0,20}macbook air
+laptops	ThinkPad X1 Carbon	x1 carbon
+laptops	ThinkPad T480	\bt480s?\b
+laptops	Framework Laptop	framework laptop|framework 13
+laptops	Dell XPS 13	xps ?13
+laptops	LG Gram	lg gram
+laptops	System76	system76
+desktops	Mac mini	mac mini
+desktops	Mac Studio	mac studio
+desktops	Intel NUC	\bnuc\b
+desktops	Beelink	beelink
+phones	iPhone SE	iphone se
+phones	Pixel 8	pixel [6-9]
+phones	Samsung Galaxy S	galaxy s\d
+phones	Fairphone	fairphone
+phones	OnePlus	oneplus
+phones	Nokia N900	\bn900\b
+tablets	iPad Pro	ipad pro
+tablets	iPad mini	ipad mini
+ereaders	Kindle Paperwhite	paperwhite
+ereaders	Kobo Libra	kobo libra|kobo clara
+ereaders	reMarkable	remarkable (?:2|paper|tablet)
+ereaders	Boox	\bboox\b
+cameras	Fujifilm X100	x100[vfst]?\b
+cameras	Sony A7	sony a7|\ba7 ?(?:iii|iv|c|r)\b
+cameras	Ricoh GR	ricoh gr
+cameras	GoPro	gopro
+cameras	Canon EOS R	canon eos|canon r[56]\b
+webcams_mics	Logitech C920	\bc920\b
+webcams_mics	Logitech Brio	logitech brio
+webcams_mics	Shure SM7B	sm7b
+webcams_mics	Blue Yeti	blue yeti
+webcams_mics	Elgato Facecam	facecam
+networking	UniFi	unifi
+networking	MikroTik	mikrotik
+networking	TP-Link Archer	archer [a-z]?[a-z]?\d{2}|tp-?link
+networking	Eero	\beero\b
+networking	GL.iNet	gl\.?inet
+storage	Synology	synology
+storage	Samsung 980 Pro	samsung 9[789]0
+storage	WD Red	wd red
+gpus_cpus	RTX 4090	rtx ?4090
+gpus_cpus	Ryzen 7950X	7950x|5950x|9950x
+gpus_cpus	Intel N100	\bn100\b
+sbc_maker	Raspberry Pi 5	raspberry pi 5|\brpi ?5\b
+sbc_maker	ESP32	esp32
+sbc_maker	Arduino Uno	arduino uno
+sbc_maker	Flipper Zero	flipper zero
+printers_3d	Bambu Lab P1S	bambu
+printers_3d	Prusa MK4	prusa mk\d|prusa
+printers_3d	Creality Ender 3	ender ?3
+consoles	Steam Deck	steam deck
+consoles	Nintendo Switch	nintendo switch
+consoles	PlayStation 5	playstation 5|\bps5\b
+vr_ar	Meta Quest 3	quest ?[23]\b
+vr_ar	Apple Vision Pro	vision pro
+wearables_watches	Apple Watch	apple watch
+wearables_watches	Garmin Fenix	garmin fenix|fenix \d
+wearables_watches	Casio F-91W	f-?91w
+wearables_watches	Oura Ring	oura
+wearables_watches	Pebble	pebble (?:time|watch|steel)
+smart_home	Home Assistant Green	home assistant (?:green|yellow)
+smart_home	Ecobee	ecobee
+smart_home	Nest Thermostat	nest thermostat
+smart_home	HomePod	homepod
+cleaning	Roomba	roomba
+cleaning	Roborock	roborock
+cleaning	Dyson V11	dyson v\d+
+cleaning	Miele vacuum	miele
+kitchen_coffee	AeroPress	aeropress
+kitchen_coffee	Baratza Encore	baratza
+kitchen_coffee	Breville Barista	breville barista|breville bambino
+kitchen_coffee	Gaggia Classic	gaggia classic
+kitchen_coffee	Instant Pot	instant ?pot
+kitchen_coffee	Vitamix	vitamix
+kitchen_coffee	Lodge cast iron	lodge (?:skillet|cast iron)
+kitchen_coffee	Zojirushi	zojirushi
+kitchen_coffee	Comandante grinder	comandante
+kitchen_coffee	Moccamaster	moccamaster
+home_appliances	Bosch dishwasher	bosch dishwasher
+home_appliances	Toto Washlet	washlet
+home_appliances	Coway Airmega	airmega|coway
+power	Anker GaN charger	anker
+power	Ecoflow	ecoflow
+power	CalDigit dock	caldigit
+bed_sleep	Eight Sleep	eight sleep
+bed_sleep	Tempur-Pedic	tempur
+bed_sleep	Casper mattress	casper mattress
+bed_sleep	Loop earplugs	loop earplugs
+bags_luggage	Peak Design Everyday	peak design
+bags_luggage	Tom Bihn	tom bihn
+bags_luggage	Patagonia Black Hole	black hole (?:bag|duffel|pack)
+bags_luggage	Rimowa	rimowa
+bags_luggage	Aer Travel Pack	aer travel|aer fit
+clothing_shoes	Darn Tough socks	darn tough
+clothing_shoes	Red Wing boots	red wing
+clothing_shoes	Uniqlo	uniqlo
+clothing_shoes	Allbirds	allbirds
+clothing_shoes	Vivobarefoot	vivobarefoot
+clothing_shoes	Arc'teryx	arc'?teryx
+tools_edc	Leatherman	leatherman
+tools_edc	Victorinox	victorinox
+tools_edc	Knipex	knipex
+tools_edc	Hakko soldering	hakko
+tools_edc	Pinecil	pinecil
+pens_paper	Lamy Safari	lamy safari|lamy 2000
+pens_paper	Pilot G2	pilot g-?2
+pens_paper	Rotring 600	rotring
+pens_paper	Leuchtturm1917	leuchtturm
+pens_paper	Field Notes	field notes
+bikes_mobility	Brompton	brompton
+bikes_mobility	VanMoof	vanmoof
+bikes_mobility	Onewheel	onewheel
+fitness	Concept2 rower	concept2|concept 2
+fitness	Peloton	peloton
+fitness	Bowflex dumbbells	bowflex
+calculators	HP-12C	hp-?1[25]c
+calculators	TI-84	\bti-?8[34]\b

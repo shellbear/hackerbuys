@@ -3,6 +3,7 @@
 Writes their ids for 22_build_queue.py --ids and prints how many such comments exist. No LLM.
 usage: 27_recall_sample.py analysis/eval/recall_ids.json [sample size]"""
 import collections
+import csv
 import json
 import sys
 
@@ -21,7 +22,12 @@ multi, single = R.collect(L.iter_results("extract/out"))
 multis, singles = R.clean_names(collections.Counter(multi), collections.Counter(single), english)
 print("names", len(multis), len(singles))
 esc = lambda t: t.replace(".", "[.]").replace("+", "[+]")
-rx_lower = r"\b(?:" + "|".join(esc(t) for t in sorted(multis, key=len, reverse=True)) + r")\b|" + R.NICKNAMES
+# Curated benchmark names cover products the filter under-counts and ones not yet seen in extraction.
+benchmark = []
+for path in ("analysis/benchmark_products.tsv", "analysis/benchmark_external.tsv"):
+    with open(path) as f:
+        benchmark += [row["pattern"] for row in csv.DictReader(f, delimiter="\t")]
+rx_lower = r"\b(?:" + "|".join(esc(t) for t in sorted(multis, key=len, reverse=True)) + "|" + "|".join(f"(?:{p})" for p in benchmark) + r")\b|" + R.NICKNAMES
 rx_case = r"\b(?:" + "|".join(esc(t) for t in sorted(singles, key=len, reverse=True)) + r")\b"
 c = duckdb.connect()
 c.sql("set threads=6; set memory_limit='14GB'; set timezone='UTC'")

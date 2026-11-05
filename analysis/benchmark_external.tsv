@@ -1,0 +1,42 @@
+category	product	pattern
+desks	Uplift V2/V3	uplift v[23]|uplift desk
+desks	FlexiSpot E7	flexispot e7
+desks	Secretlab Magnus	secretlab magnus
+chairs	Steelcase Gesture	steelcase gesture
+chairs	Herman Miller Aeron	aeron chairs?|herman miller aeron
+chairs	Steelcase Leap V2	leap v2|steelcase leap
+chairs	Herman Miller Embody	herman miller embody|embody chair
+chairs	Branch Task chair	branch (?:task|ergonomic|verve) chair
+chairs	Ticova	ticova
+keyboards	Keychron Q6	keychron q6
+keyboards	Keychron Q1 Max	keychron q1
+keyboards	Keychron V6	keychron v6
+keyboards	Wooting 80HE	wooting
+keyboards	Ducky	ducky (?:one|ok|mecha|shine)
+keyboards	Rainy 75	rainy ?75
+headphones	Sony WH-1000XM6	1000xm6
+headphones	Bose QuietComfort Ultra	quietcomfort ultra|qc ultra
+headphones	Sennheiser HDB 630	hdb ?630
+headphones	Soundcore Space Q45	space q45|soundcore space
+lighting_desk	BenQ ScreenBar Halo	screenbar halo
+lighting_desk	BenQ ScreenBar Pro	screenbar pro
+lighting_desk	BenQ ScreenBar (any)	screenbar
+lighting_desk	Quntis	quntis
+lighting_desk	Yeelight light bar	yeelight
+cleaning	Roborock Saros	roborock saros|saros 10r
+cleaning	Roborock S8	roborock s8
+cleaning	Roborock Q7	roborock q7
+cleaning	Dreame X	dreame x\d+|dreame
+cleaning	Eufy robot vacuum	eufy (?:robovac|auto-empty|c10)
+cleaning	MOVA	mova p50
+kitchen_coffee	OXO Brew grinder	oxo brew|oxo (?:conical|grinder)
+kitchen_coffee	Baratza Encore	baratza encore
+kitchen_coffee	Fellow Ode	fellow ode
+kitchen_coffee	Breville Smart Grinder	smart grinder
+kitchen_coffee	Shardor	shardor
+bags_luggage	Osprey Farpoint	farpoint
+bags_luggage	Peak Design Travel	peak design travel
+bags_luggage	Cotopaxi Allpa	allpa
+bags_luggage	REI Ruckpack	ruckpack
+bags_luggage	Gregory Baltoro	baltoro
+bags_luggage	Timbuk2	timbuk2

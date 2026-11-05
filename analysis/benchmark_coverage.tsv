@@ -1,0 +1,174 @@
+category	product	mentions	since_2025	in_filter	processed	extracted	site_pages	top_page	top_owners
+lighting_desk	BenQ ScreenBar Halo	1	0	1	0	0	0		0
+lighting_desk	BenQ ScreenBar	6	0	6	1	1	0		0
+lighting_desk	Quntis monitor light	1	0	1	0	0	0		0
+lighting_desk	Dyson Solarcycle	4	0	0	0	0	0		0
+lighting_desk	Philips Hue	636	75	635	129	68	1	Philips Hue	90
+lighting_desk	Elgato Key Light	63	11	29	8	2	1	Elgato Key Light Air	3
+monitors	Dell UltraSharp	324	37	228	49	37	1	Dell UltraSharp	120
+monitors	LG UltraFine	392	48	303	62	35	1	LG UltraFine	37
+monitors	Apple Studio Display	530	168	530	247	104	1	Apple Studio Display	75
+monitors	Apple Pro Display XDR	243	45	243	61	18	1	Apple Pro Display XDR	15
+monitors	Samsung Odyssey	85	22	62	24	19	1	Samsung Odyssey	24
+monitors	LG C2 OLED	145	45	51	26	17	0		0
+monitors	ASUS ProArt	124	72	88	57	28	2	ASUS ProArt	16
+monitors	Dasung e-ink monitor	343	35	343	64	28	3	Dasung Paperlike	8
+keyboards	Keychron Q1	18	6	18	10	5	2	Keychron Q8	2
+keyboards	Keychron K2	133	22	133	42	34	7	Keychron K8	7
+keyboards	Kinesis Advantage	972	65	972	194	163	1	Kinesis Advantage	184
+keyboards	ZSA Moonlander	716	133	716	230	143	2	ZSA Moonlander	108
+keyboards	HHKB	942	80	941	210	90	1	PFU HHKB	73
+keyboards	IBM Model M	1420	119	1418	295	169	1	IBM / Unicomp Model M	148
+keyboards	Topre Realforce	195	10	195	41	31	3	Topre Realforce	16
+keyboards	Logitech MX Keys	181	28	155	49	37	1	Logitech MX Keys	31
+keyboards	Glove80	195	85	138	83	54	2	MoErgo Glove80	20
+keyboards	NuPhy	77	17	69	34	27	3	NuPhy	7
+mice_trackpads	Logitech MX Master	463	83	463	158	117	1	Logitech MX Master	95
+mice_trackpads	Logitech MX Ergo	143	30	143	51	35	1	Logitech MX Ergo	30
+mice_trackpads	Apple Magic Trackpad	797	86	797	174	100	1	Apple Magic Trackpad	123
+mice_trackpads	Kensington Expert	107	21	87	25	19	2	Kensington Expert Mouse	12
+mice_trackpads	Razer DeathAdder	69	5	69	16	13	1	Razer DeathAdder	11
+mice_trackpads	Ploopy	147	49	94	37	20	6	Ploopy Adept	7
+chairs	Herman Miller Aeron	1704	126	1696	484	306	1	Herman Miller Aeron	253
+chairs	Herman Miller Embody	117	7	111	27	21	1	Herman Miller Embody	38
+chairs	Steelcase Leap	230	6	229	97	85	1	Steelcase Leap	84
+chairs	Steelcase Gesture	39	0	39	20	18	1	Steelcase Gesture	18
+chairs	Secretlab Titan	28	0	28	7	6	1	Secretlab Chair	8
+chairs	HAG Capisco	61	3	61	21	19	1	HÅG Capisco	16
+chairs	IKEA Markus	51	0	32	14	13	1	IKEA Markus	19
+desks	Fully Jarvis	19	2	16	6	5	1	Fully Jarvis	15
+desks	Uplift V2	18	2	17	7	2	1	Uplift Desk	14
+desks	IKEA Bekant	101	1	59	6	4	0		0
+desks	IKEA Idasen	29	2	17	5	4	1	IKEA IDÅSEN	3
+desks	FlexiSpot	21	1	10	7	7	1	FlexiSpot / Autonomous Standing desk	13
+headphones	Sony WH-1000XM	381	59	361	103	73	0		0
+headphones	Bose QuietComfort	382	41	350	97	78	1	Bose QuietComfort	184
+headphones	AirPods Pro	1335	301	1333	465	269	1	Apple AirPods Pro	313
+headphones	AirPods Max	540	128	540	184	105	1	Apple AirPods Max	107
+headphones	Sennheiser HD 600	163	10	163	38	32	1	Sennheiser HD 600/650	13
+headphones	Beyerdynamic DT 770	125	10	116	35	34	2	Beyerdynamic DT 770	27
+headphones	Audio-Technica ATH-M50	32	0	32	5	3	1	Audio-Technica ATH-M50	17
+headphones	Moondrop	42	10	31	14	7	0		0
+audio_hifi	Sonos	2998	481	2983	697	247	1	Sonos	165
+audio_hifi	KEF LS50	14	4	12	7	5	1	KEF LS50	3
+audio_hifi	Schiit	167	27	165	37	24	4	Schiit Modi	5
+audio_hifi	Bose SoundLink	34	3	25	4	1	0		0
+audio_hifi	Audioengine	28	0	18	3	1	0		0
+laptops	MacBook Air M1	1871	332	1818	523	235	0		0
+laptops	ThinkPad X1 Carbon	2277	210	1752	382	265	0		0
+laptops	ThinkPad T480	980	186	701	199	133	0		0
+laptops	Framework Laptop	2270	780	2061	915	385	1	Framework Laptop	473
+laptops	Dell XPS 13	3602	103	3599	399	256	1	Dell XPS 13	174
+laptops	LG Gram	247	36	187	60	45	1	LG Gram	21
+laptops	System76	4131	410	4128	767	226	1	System76	187
+desktops	Mac mini	9670	2228	9630	3029	854	1	Apple Mac mini	506
+desktops	Mac Studio	2461	1341	2432	1546	356	1	Apple Mac Studio	153
+desktops	Intel NUC	3595	526	3566	814	185	3	Intel NUC	130
+desktops	Beelink	450	201	450	293	142	14	Beelink	35
+phones	iPhone SE	3213	378	3210	646	298	1	Apple iPhone SE	235
+phones	Pixel 8	2586	898	2559	1279	543	0		0
+phones	Samsung Galaxy S	2811	116	2807	269	76	0		0
+phones	Fairphone	2634	939	2567	1006	274	1	Fairphone	112
+phones	OnePlus	3101	560	3077	754	309	17	OnePlus	158
+phones	Nokia N900	1822	208	764	138	57	1	Nokia N900	39
+tablets	iPad Pro	6532	631	6528	1269	522	1	Apple iPad Pro	358
+tablets	iPad mini	2496	318	2495	477	162	1	Apple iPad mini	114
+ereaders	Kindle Paperwhite	1246	150	1239	292	181	1	Amazon Kindle Paperwhite	146
+ereaders	Kobo Libra	233	123	230	168	129	0		0
+ereaders	reMarkable	1007	134	1007	282	141	0		0
+ereaders	Boox	1610	394	1601	612	366	28	Boox	53
+cameras	Fujifilm X100	938	146	252	51	20	1	Fujifilm X100	13
+cameras	Sony A7	347	50	216	41	20	2	Sony A7	6
+cameras	Ricoh GR	68	11	68	19	10	1	Ricoh GR	9
+cameras	GoPro	2381	255	2370	350	75	3	GoPro	22
+cameras	Canon EOS R	191	28	172	38	20	6	Canon EOS	20
+webcams_mics	Logitech C920	161	4	105	10	4	1	Logitech C920	3
+webcams_mics	Logitech Brio	51	2	51	9	6	1	Logitech Brio	9
+webcams_mics	Shure SM7B	81	2	49	9	3	1	Shure SM7B	2
+webcams_mics	Blue Yeti	122	5	122	20	11	1	Blue Yeti	15
+webcams_mics	Elgato Facecam	27	2	12	1	0	0		0
+networking	UniFi	2936	744	2922	948	280	1	Ubiquiti UniFi	351
+networking	MikroTik	2159	427	2145	584	201	1	MikroTik Routers	126
+networking	TP-Link Archer	1831	388	1097	320	152	12	TP-Link	63
+networking	Eero	612	78	284	72	28	2	Eero	14
+networking	GL.iNet	376	170	284	163	86	11	GL.iNet	39
+storage	Synology	4398	1045	4388	1427	410	1	Synology NAS	274
+storage	Samsung 980 Pro	259	43	258	69	27	7	Samsung 980 Pro	8
+storage	WD Red	288	41	174	38	16	1	Western Digital WD Red	12
+gpus_cpus	RTX 4090	708	224	705	354	44	0		0
+gpus_cpus	Ryzen 7950X	1402	264	830	268	65	0		0
+gpus_cpus	Intel N100	1158	499	617	466	71	3	Intel N100	15
+sbc_maker	Raspberry Pi 5	791	372	559	376	51	0		0
+sbc_maker	ESP32	7525	2556	7420	3287	274	7	Espressif ESP32	108
+sbc_maker	Arduino Uno	316	44	316	56	8	1	Arduino Uno	6
+sbc_maker	Flipper Zero	730	228	730	408	68	2	Flipper Zero	28
+printers_3d	Bambu Lab P1S	1505	1120	1499	1250	450	14	Bambu Lab	96
+printers_3d	Prusa MK4	1535	572	1532	684	298	1	Prusa	133
+printers_3d	Creality Ender 3	313	76	292	125	92	0		0
+consoles	Steam Deck	6433	2266	6422	3006	610	1	Valve Steam Deck	367
+consoles	Nintendo Switch	2834	564	2832	787	83	3	Nintendo Switch	113
+consoles	PlayStation 5	5418	1599	5372	2077	195	1	Sony PlayStation 5	36
+vr_ar	Meta Quest 3	3400	405	3396	935	465	0		0
+vr_ar	Apple Vision Pro	4953	1326	4952	2929	601	1	Apple Vision Pro	303
+wearables_watches	Apple Watch	12780	1999	12770	3230	1008	1	Apple Watch	640
+wearables_watches	Garmin Fenix	352	93	308	128	95	0		0
+wearables_watches	Casio F-91W	472	140	287	105	53	2	Casio F-91W	26
+wearables_watches	Oura Ring	520	180	518	257	79	2	Oura Ring	46
+wearables_watches	Pebble	991	256	600	159	56	6	Pebble Time	33
+smart_home	Home Assistant Green	46	17	17	8	3	1	Home Assistant Yellow	2
+smart_home	Ecobee	399	70	399	99	43	3	Ecobee	26
+smart_home	Nest Thermostat	452	50	452	72	24	2	Google Nest Thermostat	10
+smart_home	HomePod	1821	259	999	201	57	2	Apple HomePod	50
+cleaning	Roomba	2571	500	2551	679	206	2	iRobot Roomba	159
+cleaning	Roborock	348	129	347	182	111	8	Roborock	54
+cleaning	Dyson V11	34	7	34	11	9	4	Dyson V8	4
+cleaning	Miele vacuum	1050	206	1047	310	158	8	Miele	63
+kitchen_coffee	AeroPress	1176	86	1176	180	98	1	AeroPress	67
+kitchen_coffee	Baratza Encore	89	3	88	11	9	3	Baratza Virtuoso	3
+kitchen_coffee	Breville Barista	34	4	34	13	11	2	Breville Barista Express	5
+kitchen_coffee	Gaggia Classic	60	7	60	16	9	2	Gaggia Classic Pro	4
+kitchen_coffee	Instant Pot	750	70	709	133	62	1	Instant Pot	53
+kitchen_coffee	Vitamix	191	25	191	57	27	1	Vitamix	19
+kitchen_coffee	Lodge cast iron	51	2	51	6	1	2	Lodge cast iron skillet	3
+kitchen_coffee	Zojirushi	289	26	288	81	59	3	Zojirushi	20
+kitchen_coffee	Comandante grinder	18	1	2	1	1	0		0
+kitchen_coffee	Moccamaster	84	13	20	9	6	1	Technivorm Moccamaster	4
+home_appliances	Bosch dishwasher	123	35	123	46	7	1	Bosch dishwasher	17
+home_appliances	Toto Washlet	140	17	78	14	6	1	Toto Washlet	7
+home_appliances	Coway Airmega	99	10	97	24	14	3	Coway	5
+power	Anker GaN charger	1893	377	1885	510	231	16	Anker	66
+power	Ecoflow	151	100	52	46	13	2	EcoFlow	2
+power	CalDigit dock	356	50	213	47	32	7	CalDigit TS3 Plus	8
+bed_sleep	Eight Sleep	75	42	74	48	14	2	Eight Sleep	7
+bed_sleep	Tempur-Pedic	49	0	48	10	7	1	Tempur-Pedic	3
+bed_sleep	Casper mattress	31	2	31	5	0	0		0
+bed_sleep	Loop earplugs	8	3	8	5	1	1	Loop Earplugs	3
+bags_luggage	Peak Design Everyday	124	40	124	47	16	3	Peak Design	10
+bags_luggage	Tom Bihn	60	12	60	19	12	2	Tom Bihn Synapse	4
+bags_luggage	Patagonia Black Hole	0	0	0	0	0	0		0
+bags_luggage	Rimowa	26	1	26	3	0	0		0
+bags_luggage	Aer Travel Pack	3	1	1	1	0	0		0
+clothing_shoes	Darn Tough socks	114	21	114	33	18	2	Darn Tough	13
+clothing_shoes	Red Wing boots	57	10	57	14	2	0		0
+clothing_shoes	Uniqlo	639	80	638	137	40	2	Uniqlo	15
+clothing_shoes	Allbirds	226	74	221	78	8	1	Allbirds	5
+clothing_shoes	Vivobarefoot	52	12	52	21	17	1	Vivobarefoot	10
+clothing_shoes	Arc'teryx	87	12	87	17	6	0		0
+tools_edc	Leatherman	337	53	336	96	41	1	Leatherman	36
+tools_edc	Victorinox	218	38	217	62	40	3	Victorinox Swiss Army Knife	9
+tools_edc	Knipex	73	14	73	19	8	1	Knipex Pliers Wrench	2
+tools_edc	Hakko soldering	237	49	106	37	24	3	Hakko	9
+tools_edc	Pinecil	288	41	284	91	57	2	Pine64 Pinecil	25
+pens_paper	Lamy Safari	233	35	233	72	59	2	Lamy Safari	26
+pens_paper	Pilot G2	98	14	98	24	17	2	Pilot G2	20
+pens_paper	Rotring 600	148	36	148	53	37	5	Rotring 600	20
+pens_paper	Leuchtturm1917	88	8	86	23	3	0		0
+pens_paper	Field Notes	152	29	152	41	12	1	Field Notes	6
+bikes_mobility	Brompton	345	55	343	66	42	1	Brompton	21
+bikes_mobility	VanMoof	301	17	300	32	13	1	VanMoof	6
+bikes_mobility	Onewheel	296	11	294	20	8	2	Future Motion Onewheel	4
+fitness	Concept2 rower	187	20	149	26	14	1	Concept2	6
+fitness	Peloton	1947	85	1929	181	21	2	Peloton	9
+fitness	Bowflex dumbbells	55	0	55	3	1	0		0
+calculators	HP-12C	208	34	45	14	9	1	HP-15C	3
+calculators	TI-84	1222	216	188	49	15	3	Texas Instruments TI-83	8

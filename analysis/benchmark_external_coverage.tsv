@@ -1,0 +1,42 @@
+category	product	mentions	since_2025	in_filter	processed	extracted	site_pages	top_page	top_owners
+desks	Uplift V2/V3	18	2	17	7	2	1	Uplift Desk	15
+desks	FlexiSpot E7	0	0	0	0	0	0		0
+desks	Secretlab Magnus	0	0	0	0	0	0		0
+chairs	Steelcase Gesture	39	0	39	20	18	1	Steelcase Gesture	18
+chairs	Herman Miller Aeron	729	53	729	173	120	2	Herman Miller Aeron	254
+chairs	Steelcase Leap V2	246	6	245	105	92	3	Steelcase Leap	84
+chairs	Herman Miller Embody	100	5	100	23	18	1	Herman Miller Embody	38
+chairs	Branch Task chair	1	0	1	0	0	0		0
+chairs	Ticova	0	0	0	0	0	0		0
+keyboards	Keychron Q6	5	3	5	3	0	0		0
+keyboards	Keychron Q1 Max	6	2	6	2	2	1	Keychron Q1 Max	2
+keyboards	Keychron V6	4	0	4	2	1	0		0
+keyboards	Wooting 80HE	72	15	52	21	9	1	Wooting	4
+keyboards	Ducky	49	3	33	9	6	1	Ducky One 2	3
+keyboards	Rainy 75	0	0	0	0	0	0		0
+headphones	Sony WH-1000XM6	12	12	12	12	7	1	Sony WH-1000XM WH-1000XM6	4
+headphones	Bose QuietComfort Ultra	18	15	13	13	8	1	Bose QuietComfort Ultra 2	4
+headphones	Sennheiser HDB 630	3	3	2	2	2	0		0
+headphones	Soundcore Space Q45	5	1	5	4	4	0		0
+lighting_desk	BenQ ScreenBar Halo	1	0	1	0	0	0		0
+lighting_desk	BenQ ScreenBar Pro	0	0	0	0	0	0		0
+lighting_desk	BenQ ScreenBar (any)	6	0	6	1	1	0		0
+lighting_desk	Quntis	1	0	1	0	0	0		0
+lighting_desk	Yeelight light bar	42	0	9	2	1	0		0
+cleaning	Roborock Saros	2	2	2	2	2	0		0
+cleaning	Roborock S8	6	1	6	2	2	0		0
+cleaning	Roborock Q7	0	0	0	0	0	0		0
+cleaning	Dreame X	98	44	41	28	9	1	Dreame	6
+cleaning	Eufy robot vacuum	18	0	9	4	4	1	Eufy RoboVac	2
+cleaning	MOVA	0	0	0	0	0	0		0
+kitchen_coffee	OXO Brew grinder	1	0	1	0	0	0		0
+kitchen_coffee	Baratza Encore	24	0	23	0	0	0		0
+kitchen_coffee	Fellow Ode	10	1	2	1	1	0		0
+kitchen_coffee	Breville Smart Grinder	5	0	5	0	0	0		0
+kitchen_coffee	Shardor	0	0	0	0	0	0		0
+bags_luggage	Osprey Farpoint	36	6	20	6	6	1	Osprey Farpoint	5
+bags_luggage	Peak Design Travel	2	1	2	1	1	1	Peak Design Travel Backpack	2
+bags_luggage	Cotopaxi Allpa	1	0	1	0	0	0		0
+bags_luggage	REI Ruckpack	1	0	1	0	0	0		0
+bags_luggage	Gregory Baltoro	0	0	0	0	0	0		0
+bags_luggage	Timbuk2	70	8	50	16	14	3	Timbuk2 backpack	2

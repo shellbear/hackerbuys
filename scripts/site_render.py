@@ -25,6 +25,39 @@ def tag_path(key):
     return f"/t/{slug(key)}"
 
 
+_VAGUE_MODEL = {"older", "old", "new", "newer", "newest", "latest", "original", "base", "unknown", "unspecified", "model unspecified", "standard", "regular", "first", "second", "various", "current", "previous", "previous version", "latest generation", "generic"}
+
+
+def normalize_model(model, line):
+    """Key for grouping a model under its product line, or None if it doesn't identify one."""
+    t = (model or "").lower().strip()
+    t = re.sub(r"\([^)]*\)", " ", t)
+    t = re.sub(r"\b\d+(?:\.\d+)?(?:[- ]?(?:inch|in)\b|\")", " ", t)
+    t = re.sub(r"\b\d+ ?(?:gb|tb)\b", " ", t)
+    t = re.sub(r"\b(?:gen|generation|mk|mark)\.? ?\d+\b", " ", t)
+    t = re.sub(r"\s+", " ", t).strip(" ,-/")
+    head = (line or "").lower().strip()
+    if head and t.startswith(head + " "):
+        t = t[len(head) + 1:]
+    last = head.split()[-1] if head else ""
+    if last and t.endswith(" " + last):
+        t = t[: -len(last) - 1]
+    if not t or t in _VAGUE_MODEL or t == head or len(t) > 24 or len(t.split()) > 4:
+        return None
+    return t
+
+
+def merges_across_lines(model):
+    """T480 means one product whichever line it was filed under; M1 or 13 mean different things under different lines."""
+    return len(model) >= 4 and bool(re.search(r"\d", model)) and not re.fullmatch(r"(?:19|20)\d\d", model)
+
+
+def model_name(parent, label):
+    """Page name for a model: "Lenovo ThinkPad X1" + "X1 Carbon" reads as "Lenovo ThinkPad X1 Carbon"."""
+    last = parent.split()[-1].lower()
+    return f"{' '.join(parent.split()[:-1])} {label}".strip() if label.lower().startswith(last) else f"{parent} {label}"
+
+
 def indexable(p):
     return p["own"] >= MIN_INDEX_OWNERS and not p["bo"]
 
@@ -82,7 +115,7 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 class Site:
     def __init__(self, cats, tags, coverage, products=()):
         self.cats, self.tags, self.coverage = cats, tags, coverage
-        self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"]]
+        self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("pk")]
 
     def _nav(self, cat=None, tag=None):
         count = lambda key: sum(p["c"] == key for p in self.live)
@@ -176,7 +209,10 @@ class Site:
         to = f'<div><p class="note">Left this for</p><ul class="moves">{moves(p["to"])}</ul></div>' if p["to"] else ""
         fr = f'<div><p class="note">Came here from</p><ul class="moves">{moves(p["fr"])}</ul></div>' if p["fr"] else ""
         moved = f'<h2>Where people moved</h2><div class="two">{to}{fr}</div>' if to or fr else ""
-        main = (f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a></p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{moved}'
+        parent = f' · <a href="/p/{e(p["pk"])}">{e(p.get("pn") or "All models")}</a>' if p.get("pk") else ""
+        models = "".join(f'<li><a href="/p/{e(k)}">{e(n)}</a><span>{e(c)}</span></li>' for n, k, c in p.get("models") or [])
+        models = f'<h2>Models</h2><ul class="moves">{models}</ul>' if models else ""
+        main = (f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{models}{moved}'
                 f'<h2>What owners wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>')
         crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": cat, "item": ORIGIN + cat_path(p["c"])},

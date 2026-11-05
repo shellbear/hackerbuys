@@ -106,4 +106,47 @@ class Meta(unittest.TestCase):
         self.assertEqual(tags['bifl'][0], 'Buy it for life')
         self.assertGreater(len(cats), 30)
 
+
+
+class Models(unittest.TestCase):
+    def test_line_name_is_removed(self):
+        self.assertEqual(R.normalize_model('Quest 3', 'Quest'), '3')
+    def test_case_is_merged(self):
+        self.assertEqual(R.normalize_model('13 Mini', 'iPhone'), R.normalize_model('13 mini', 'iPhone'))
+    def test_sizes_and_memory_are_removed(self):
+        self.assertEqual(R.normalize_model('14-inch M3', 'MacBook Pro'), 'm3')
+        self.assertEqual(R.normalize_model('M1 16GB', 'MacBook Air'), 'm1')
+    def test_size_only_is_not_a_model(self):
+        self.assertIsNone(R.normalize_model('16-inch', 'MacBook Pro'))
+    def test_generation_suffix_is_removed(self):
+        self.assertEqual(R.normalize_model('X1 Carbon Gen 9', 'ThinkPad X1'), 'x1 carbon')
+    def test_vague_words_are_not_models(self):
+        for bad in ('older', 'latest', 'model unspecified', 'original', ''):
+            self.assertIsNone(R.normalize_model(bad, 'iPhone'), bad)
+    def test_long_descriptions_are_not_models(self):
+        self.assertIsNone(R.normalize_model('the one I bought from a friend last summer', 'iPhone'))
+    def test_model_page_name_does_not_repeat_the_line(self):
+        self.assertEqual(R.model_name('Lenovo ThinkPad', 'T480'), 'Lenovo ThinkPad T480')
+        self.assertEqual(R.model_name('Lenovo ThinkPad X1', 'X1 Carbon'), 'Lenovo ThinkPad X1 Carbon')
+    def test_model_extending_the_last_word_replaces_it(self):
+        self.assertEqual(R.model_name('Sony WH-1000XM', 'WH-1000XM4'), 'Sony WH-1000XM4')
+    def test_trailing_line_word_is_removed(self):
+        self.assertEqual(R.normalize_model('M1 Air', 'MacBook Air'), 'm1')
+    def test_distinctive_model_merges_across_lines_of_a_brand(self):
+        self.assertTrue(R.merges_across_lines('t480'))
+        self.assertTrue(R.merges_across_lines('x1 carbon'))
+        self.assertTrue(R.merges_across_lines('4090'))
+    def test_chip_names_and_years_stay_within_their_line(self):
+        for mk in ('m1', '13', '2020', 'pro', '4a'):
+            self.assertFalse(R.merges_across_lines(mk), mk)
+    def test_child_links_to_parent_page(self):
+        h = SITE.product_page(dict(E, k='kinesis-advantage-2', n='Kinesis Advantage 2', pk='kinesis-advantage', pn='Kinesis Advantage'))
+        self.assertIn('href="/p/kinesis-advantage"', h)
+    def test_parent_lists_its_models(self):
+        h = SITE.product_page(dict(E, models=[['2', 'kinesis-advantage-2', 12]]))
+        self.assertIn('href="/p/kinesis-advantage-2"', h)
+    def test_child_is_not_counted_in_navigation_totals(self):
+        s = R.Site(CATS, TAGS, 'x', [dict(E), dict(E, k='child', pk='kinesis-advantage')])
+        self.assertEqual(len(s.live), 1)
+
 if __name__ == '__main__': unittest.main()
