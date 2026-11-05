@@ -49,11 +49,12 @@ Extraction runs newest first, and the site updates as it progresses.
 
 | | As of November 5, 2026 |
 |---|---|
-| Comments scanned | 345,879 of about 41 million |
-| Complete years | 2025 and most of 2026, among comments that match the product filter |
-| Earlier years | A sample chosen to favor likely product opinions, with 2024 in progress |
-| Product mentions | 77,130 |
-| Ranked products | 1,601 with 3 or more owners |
+| Comments scanned | 473,025 of about 41 million |
+| Complete years | 2024 to 2026 (through November 3), among comments that match the product filter |
+| Second pass | 11,820 comments from 2024 to 2026 that the filter rejected but that name a known product and carry an opinion signal |
+| Earlier years | A sample chosen to favor likely product opinions |
+| Product mentions | 95,080 |
+| Ranked products | 1,938 with 3 or more owners, plus 1,139 model pages |
 
 ## How it works
 
