@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pick a random sample of comments the keyword filter rejected that mention a discovered product name and carry an opinion signal.
 Writes their ids for 22_build_queue.py --ids and prints how many such comments exist. No LLM.
-usage: 27_recall_sample.py analysis/eval/recall_ids.json [sample size] [scan 1 in N]"""
+usage: 27_recall_sample.py analysis/eval/recall_ids.json [sample size] [scan 1 in N] [min year]"""
 import collections
 import csv
 import json
@@ -16,6 +16,7 @@ from lexicon import OWN, REC
 out, size = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 500
 # 1 in 50 is plenty to estimate and sample from; pass 1 to scan every comment for the full second pass.
 SCAN_SHARE = int(sys.argv[3]) if len(sys.argv) > 3 else 50
+MIN_YEAR = int(sys.argv[4]) if len(sys.argv) > 4 else 0
 with open("/usr/share/dict/words") as f:
     english = {w.strip().lower() for w in f}
 english |= {w + "s" for w in english}
@@ -34,10 +35,11 @@ c = duckdb.connect()
 c.sql("set threads=6; set memory_limit='14GB'; set timezone='UTC'")
 c.sql(r"""create macro clean(t) as regexp_replace(regexp_replace(replace(replace(replace(replace(replace(replace(t,'&#x27;',''''),'&quot;','"'),'&#x2F;','/'),'&gt;','>'),'&lt;','<'),'&amp;','&'),'<p>',' ','g'),'<[^>]+>',' ','g')""")
 c.execute(
-    f"""create table s as select id,clean(text) txt from read_parquet('data/raw/*.parquet')
-    where type=2 and coalesce(deleted,0)=0 and coalesce(dead,0)=0 and text is not null and "by"<>''
-      and hash(id||'recall')%{SCAN_SHARE}=0 and length(text)>=25
-      and id not in (select id from 'data/derived/cand.parquet')"""
+    f"""create table s as select id,clean(text) txt from read_parquet(['data/raw/*.parquet','data/daily/*.parquet'],union_by_name=true)
+    where type=2 and coalesce(deleted,0)=0 and coalesce(dead,0)=0 and text is not null and "by"<>'' and text<>'[delayed]'
+      and year(time)>={MIN_YEAR} and hash(id||'recall')%{SCAN_SHARE}=0 and length(text)>=25
+      and id not in (select id from 'data/derived/cand.parquet')
+      and id not in (select id from read_parquet('data/extract/queue.parquet'))"""
 )
 total = c.execute("select count(*) from s").fetchall()[0][0]
 c.execute("create table h as select id,txt from s where regexp_matches(lower(txt),?) or regexp_matches(txt,?)", [rx_lower, rx_case])
