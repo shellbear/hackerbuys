@@ -1,8 +1,9 @@
 // Sorting for the product table. Loaded by the page and by tests/site_sort.test.cjs.
 (function (root) {
+  const MIN_VERDICTS = 3;
   function happy(p, view) {
     const pos = view === 'recent' ? p.rpos : p.pos, neg = view === 'recent' ? p.rneg : p.neg;
-    return pos + neg ? pos / (pos + neg) : null;
+    return pos + neg >= MIN_VERDICTS ? pos / (pos + neg) : null;
   }
   const count = (p, view) => (view === 'recent' ? p.rown : view === 'long' ? p.lh : p.own);
   const value = {
@@ -52,6 +53,10 @@
     }
     return scored.sort((a, b) => (a.p.own < MIN_RANKED) - (b.p.own < MIN_RANKED) || a.rank - b.rank || b.p.own - a.p.own).slice(0, MAX_RESULTS).map(x => x.p);
   }
-  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts };
+  function categorySummary(rows) {
+    if (rows.length < 3) return null;
+    return { loved: [...rows].sort((a, b) => b.w - a.w).slice(0, 3), owned: [...rows].sort((a, b) => b.own - a.own).slice(0, 3) };
+  }
+  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts, categorySummary };
   if (typeof module !== 'undefined') module.exports = api; else root.TableSort = api;
 })(this);

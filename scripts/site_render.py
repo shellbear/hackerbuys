@@ -4,6 +4,10 @@ import html, json, re
 ORIGIN = "https://hn.shellbear.me"
 TAGLINE = "The stuff Hacker News actually recommends."
 MIN_INDEX_OWNERS = 3
+MIN_INDEX_VERDICTS = 5
+MIN_PERCENT_VERDICTS = 3
+MAX_DESCRIPTION = 200
+ITEM_LIST_SIZE = 10
 LIST_ROWS = 100
 FONTS = "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
 STANCE = {"recommend": "Recommends it", "positive": "Likes it", "neutral": "Neutral", "negative": "Doesn’t like it"}
@@ -59,12 +63,42 @@ def model_name(parent, label):
 
 
 def indexable(p):
-    return p["own"] >= MIN_INDEX_OWNERS and not p["bo"]
+    """Fewer, stronger pages: a brand with no product line, or a page with a handful of verdicts, says too little to rank."""
+    return p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("nl") and p["pos"] + p["neg"] >= MIN_INDEX_VERDICTS
 
 
-def _pct(p):
+def happy_pct(p):
     n = p["pos"] + p["neg"]
-    return f"{round(100 * p['pos'] / n)}%" if n else "–"
+    return f"{round(100 * p['pos'] / n)}%" if n >= MIN_PERCENT_VERDICTS else "–"
+
+
+def _aspects(items):
+    words = [x.replace("_", " ") for x in items[:2]]
+    return " and ".join(words)
+
+
+def _reasons(p):
+    bits = []
+    if p.get("pr"):
+        bits.append(f"Praised for {_aspects(p['pr'])}")
+    praised = (p.get("pr") or [])[:2]
+    criticized = [x for x in p.get("co") or [] if x not in praised]
+    if criticized:
+        bits.append(f"{'criticized' if bits else 'Criticized'} for {_aspects(criticized)}")
+    return "; ".join(bits) + "." if bits else ""
+
+
+def _description(p):
+    n = p["pos"] + p["neg"]
+    if n >= MIN_PERCENT_VERDICTS:
+        lead = f"{happy_pct(p)} of {n} verdicts on the {p['n']} from Hacker News owners are positive."
+    else:
+        lead = f"What Hacker News owners say about the {p['n']}."
+    parts = [lead]
+    for extra in (_reasons(p), f"{p['lh']} still happy after 3+ years." if p.get("lh") else "", "Every opinion links to its comment."):
+        if extra and len(" ".join(parts + [extra])) <= MAX_DESCRIPTION:
+            parts.append(extra)
+    return " ".join(parts)[:MAX_DESCRIPTION]
 
 
 def embed_json(obj):
@@ -154,7 +188,7 @@ class Site:
             small = f"<small>{e(self.cats.get(p['c'], p['c']))}</small>" if show_cat else ""
             chips = "".join(f'<a href="{e(tag_path(t))}">{e(self.tags[t][0])}</a>' for t in p["tags"] if t in self.tags)
             chips = f'<span class="chips">{chips}</span>' if chips else ""
-            out.append(f'<tr><td class="nm"><a href="/p/{e(p["k"])}">{e(p["n"])}</a>{small}{chips}</td><td class="ty">{p["pos"]} positive, {p["neu"]} neutral, {p["neg"]} negative</td><td>{p["own"]}</td><td class="hide-s">{_pct(p)}</td><td class="hide-s">{p["ly"]}</td></tr>')
+            out.append(f'<tr><td class="nm"><a href="/p/{e(p["k"])}">{e(p["n"])}</a>{small}{chips}</td><td class="ty">{p["pos"]} positive, {p["neu"]} neutral, {p["neg"]} negative</td><td>{p["own"]}</td><td class="hide-s">{happy_pct(p)}</td><td class="hide-s">{p["ly"]}</td></tr>')
         return "".join(out)
 
     def list_page(self, rows, cat=None, tag=None):
@@ -176,8 +210,17 @@ class Site:
         tabs = "".join(f'<a href="{e(sep(k))}" aria-current="{"true" if k == "loved" else "false"}">{e(t)}</a>' for k, t in VIEWS)
         table = (f'<table><thead><tr><th>Product</th><th>Verdict</th><th>Owners</th><th class="hide-s">Happy</th><th class="hide-s">Last mention</th></tr></thead><tbody>{self._rows(rows if cat or tag else rows[:LIST_ROWS], not cat)}</tbody></table>'
                  if rows else '<p class="empty">No products have enough owners here yet.</p>')
-        main = f'<h1>{e(heading)}</h1>{lede}<div class="views">{tabs}</div><p class="note">{e(NOTE)}</p>{table}'
-        return self._page(title, desc, base, main, cat=cat, tag=tag)
+        summary, extra = "", ""
+        if cat and len(rows) >= 3:
+            link = lambda p: f'<a href="/p/{e(p["k"])}">{e(p["n"])}</a>'
+            join = lambda ps: ", ".join(link(p) for p in ps)
+            loved = sorted(rows, key=lambda p: -p["w"])[:3]
+            owned = sorted(rows, key=lambda p: -p["own"])[:3]
+            summary = f'<p class="note" id="summary">Most loved by owners: {join(loved)}. Most owned: {join(owned)}.</p>'
+            items = [{"@type": "ListItem", "position": i + 1, "url": f"{ORIGIN}/p/{p['k']}", "name": p["n"]} for i, p in enumerate(rows[:ITEM_LIST_SIZE])]
+            extra = f'<script type="application/ld+json">{embed_json({"@context": "https://schema.org", "@type": "ItemList", "name": heading, "itemListElement": items})}</script>'
+        main = f'<h1>{e(heading)}</h1>{lede}{summary}<div class="views">{tabs}</div><p class="note">{e(NOTE)}</p>{table}'
+        return self._page(title, desc, base, main, cat=cat, tag=tag, extra=extra)
 
     def _comment(self, c):
         cl = {"negative": "n", "neutral": ""}.get(c["s"], "p")
@@ -195,12 +238,10 @@ class Site:
         cat = self.cats.get(p["c"], p["c"])
         owners = "1 Hacker News owner thinks" if p["own"] == 1 else f"{p['own']} Hacker News owners think"
         title = f"{p['n']}: what {owners} | HackerBuys"
-        n = p["pos"] + p["neg"]
-        lead = f"{_pct(p)} of {n} verdicts from Hacker News owners are positive." if n else f"What Hacker News commenters say about {p['n']}."
-        desc = f"{lead} Read what they wrote, how long they’ve owned it and what they switched to."
+        desc = _description(p)
         whys = "".join(f'<li><a href="{e(tag_path(t))}">{e(self.tags[t][0])}</a><span>{e(p["why"].get(t, ""))}</span></li>' for t in p["tags"] if t in self.tags)
         whys = f'<ul class="whys">{whys}</ul>' if whys else ""
-        stats = [(p["own"], "owners with an opinion"), (_pct(p), "of verdicts positive"), (f"{p['rpos']}/{p['rneg']}", "positive/negative since 2024")]
+        stats = [(p["own"], "owners with an opinion"), (happy_pct(p), "of verdicts positive"), (f"{p['rpos']}/{p['rneg']}", "positive/negative since 2024")]
         if p["maxt"]:
             stats.append((f"{p['maxt']} yrs", "longest happy owner"))
         stats.append((p["lh"], "happy after 3+ years"))
@@ -209,10 +250,11 @@ class Site:
         to = f'<div><p class="note">Left this for</p><ul class="moves">{moves(p["to"])}</ul></div>' if p["to"] else ""
         fr = f'<div><p class="note">Came here from</p><ul class="moves">{moves(p["fr"])}</ul></div>' if p["fr"] else ""
         moved = f'<h2>Where people moved</h2><div class="two">{to}{fr}</div>' if to or fr else ""
+        reasons = f'<p class="note">{e(_reasons(p))}</p>' if _reasons(p) else ""
         parent = f' · <a href="/p/{e(p["pk"])}">{e(p.get("pn") or "All models")}</a>' if p.get("pk") else ""
         models = "".join(f'<li><a href="/p/{e(k)}">{e(n)}</a><span>{e(c)}</span></li>' for n, k, c in p.get("models") or [])
         models = f'<h2>Models</h2><ul class="moves">{models}</ul>' if models else ""
-        main = (f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{models}{moved}'
+        main = (f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{reasons}{models}{moved}'
                 f'<h2>What owners wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>')
         crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": cat, "item": ORIGIN + cat_path(p["c"])},

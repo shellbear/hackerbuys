@@ -1,6 +1,6 @@
 # HackerBuys
 
-> The stuff Hacker News actually recommends. 1711 physical products ranked by the Hacker News commenters who own them, with every opinion linked to its comment.
+> The stuff Hacker News actually recommends. 1732 physical products ranked by the Hacker News commenters who own them, with every opinion linked to its comment.
 
 Opinions and ownership were extracted by AI, so they can be wrong: check the linked comment before relying on one. Counts cover the comments scanned so far, not all of Hacker News.
 

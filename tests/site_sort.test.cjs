@@ -117,3 +117,18 @@ test('products under the ranking threshold come after better-supported ones', ()
   const list = [S('standing desk', 2, [], 'desks'), S('IKEA Standing desk', 19, [], 'desks')];
   assert.deepEqual(found(list, 'standing desk'), ['IKEA Standing desk', 'standing desk']);
 });
+
+const { categorySummary } = require('../site/sort.js');
+test('category summary lists most loved and most owned', () => {
+  const rows = [{ n: 'A', k: 'a', own: 5, w: .9 }, { n: 'B', k: 'b', own: 50, w: .7 }, { n: 'C', k: 'c', own: 20, w: .8 }, { n: 'D', k: 'd', own: 9, w: .1 }];
+  const s = categorySummary(rows);
+  assert.deepEqual(s.loved.map(p => p.k), ['a', 'c', 'b']);
+  assert.deepEqual(s.owned.map(p => p.k), ['b', 'c', 'd']);
+});
+test('too few products gives no category summary', () => {
+  assert.equal(categorySummary([{ n: 'A', k: 'a', own: 5, w: .9 }]), null);
+});
+test('happy percentage is hidden under three verdicts and sorts last', () => {
+  const t = [P('thin', 3, 2, 0, 2026), P('solid', 9, 3, 1, 2026)];
+  assert.deepEqual(names(sortRows(t, 'happy', 'desc', 'loved')), ['solid', 'thin']);
+});

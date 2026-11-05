@@ -229,6 +229,7 @@ def make(k,v,name=None,parent=None,parent_name=None):
     why={} if brand_only or parent else calc_tags(e,v,k,by_ten,gl)
     e['tags']=list(why)
     if parent: e.update(pk=parent,pn=parent_name)
+    if not parent and not v[0]['cl']: e['nl']=True
     index.append(e)
     seen=set();cs=[]
     for x in sorted(v,key=lambda x:(-(x['tenure_years'] or 0),x['time'])):
@@ -236,7 +237,8 @@ def make(k,v,name=None,parent=None,parent_name=None):
         seen.add(x['id']);src=text[x['id']]
         cs.append(dict(id=x['id'],by=x['by'],d=x['time'],s=x['stance'],fh=x['first_hand'],ten=x['tenure_years'],sg=x['still_going'],m=x.get('model') or '',g=gen_label(x),sf=x.get('switched_from') or '',t=L.trim_text(src['text'],MAX_TEXT),th=x['title'] or '',root=x['root']))
     cs=L.pick_comments(cs,MAX_COMMENTS)
-    page=dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why)
+    aspect=lambda f:[t for t,_ in collections.Counter(w for x in v if x['first_hand'] for w in (x.get(f) or [])).most_common(3)]
+    page=dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why,pr=aspect('pros'),co=aspect('cons'))
     pages.append(page)
     return page
 parents={}

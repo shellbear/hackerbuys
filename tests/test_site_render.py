@@ -149,4 +149,66 @@ class Models(unittest.TestCase):
         s = R.Site(CATS, TAGS, 'x', [dict(E), dict(E, k='child', pk='kinesis-advantage')])
         self.assertEqual(len(s.live), 1)
 
+
+class VerdictWording(unittest.TestCase):
+    def test_singular_verdict(self):
+        h = SITE.product_page(dict(E, own=3, pos=1, neg=0))
+        self.assertNotIn('1 verdicts', h)
+    def test_too_few_verdicts_show_no_percentage(self):
+        self.assertEqual(R.happy_pct(dict(E, pos=2, neg=0)), '–')
+        self.assertNotIn('100% of', SITE.product_page(dict(E, own=3, pos=2, neg=0)))
+    def test_enough_verdicts_show_percentage(self):
+        self.assertEqual(R.happy_pct(dict(E, pos=3, neg=1)), '75%')
+
+class StrongerIndexing(unittest.TestCase):
+    def test_few_verdicts_are_noindex(self):
+        self.assertFalse(R.indexable(dict(E, own=9, pos=3, neg=1)))
+        self.assertIn('noindex', SITE.product_page(dict(E, own=9, pos=3, neg=1)))
+    def test_brand_without_a_product_line_is_noindex(self):
+        self.assertFalse(R.indexable(dict(E, nl=True)))
+    def test_noindex_page_is_left_out_of_sitemap(self):
+        self.assertNotIn('/p/rheem', R.sitemap([], [dict(E, k='rheem', pos=1, neg=0)], '2026-11-05'))
+    def test_strong_page_stays_indexable(self):
+        self.assertTrue(R.indexable(E))
+
+class Descriptions(unittest.TestCase):
+    P = dict(E, pr=['ergonomics', 'build_quality'], co=['value'], lh=46)
+    def desc(self, p):
+        return re.search(r'<meta name="description" content="([^"]*)"', SITE.product_page(p)).group(1)
+    def test_names_the_product_and_verdict(self):
+        self.assertIn('93% of 170 verdicts on the Kinesis Advantage', self.desc(self.P))
+    def test_uses_praise_and_criticism(self):
+        d = self.desc(self.P)
+        self.assertIn('Praised for ergonomics and build quality', d)
+        self.assertIn('criticized for value', d)
+    def test_an_aspect_is_not_both_praised_and_criticized(self):
+        d = self.desc(dict(self.P, pr=['ergonomics', 'comfort'], co=['ergonomics', 'portability']))
+        self.assertIn('criticized for portability', d)
+        self.assertNotIn('criticized for ergonomics', d)
+    def test_mentions_long_term_owners(self):
+        self.assertIn('46 still happy after 3+ years', self.desc(self.P))
+    def test_stays_short_enough_for_results(self):
+        self.assertLessEqual(len(self.desc(dict(self.P, n='A very long product name ' * 3, pr=['ergonomics', 'build_quality', 'durability'], co=['value', 'software', 'support']))), 200)
+    def test_praise_is_shown_on_the_page(self):
+        self.assertIn('Praised for', re.sub(r'<head>.*</head>', '', SITE.product_page(self.P), flags=re.S))
+    def test_no_reasons_still_gives_a_description(self):
+        self.assertIn('Kinesis Advantage', self.desc(dict(E, pr=[], co=[])))
+
+class CategoryContent(unittest.TestCase):
+    ROWS = [dict(E, k=f'p{i}', n=f'Product {i}', own=100 - i * 30, w=.5 + i * .1) for i in range(3)]
+    def test_summary_links_most_loved_and_most_owned(self):
+        h = SITE.list_page(self.ROWS, cat='keyboards')
+        self.assertIn('id="summary"', h)
+        self.assertIn('Most loved', h)
+        self.assertIn('<a href="/p/p2">Product 2</a>', h)
+    def test_item_list_has_positions_and_absolute_urls(self):
+        h = SITE.list_page(self.ROWS, cat='keyboards')
+        data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', h, re.S).group(1))
+        self.assertEqual(data['@type'], 'ItemList')
+        self.assertEqual(data['itemListElement'][0]['position'], 1)
+        self.assertEqual(data['itemListElement'][0]['url'], 'https://hn.shellbear.me/p/p0')
+    def test_home_has_no_category_summary(self):
+        self.assertNotIn('id="summary"', SITE.list_page(self.ROWS))
+
+
 if __name__ == '__main__': unittest.main()
