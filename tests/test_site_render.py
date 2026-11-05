@@ -150,6 +150,65 @@ class Models(unittest.TestCase):
         self.assertEqual(len(s.live), 1)
 
 
+class ModelNames(unittest.TestCase):
+    def test_model_repeating_the_line_is_not_written_twice(self):
+        for parent, label, want in (
+            ('Logitech MX Master', 'MX Master 3', 'Logitech MX Master 3'),
+            ('Raspberry Pi', 'Raspberry Pi 4', 'Raspberry Pi 4'),
+            ('Microsoft Surface Pro', 'Surface Pro 3', 'Microsoft Surface Pro 3'),
+            ('Samsung Galaxy S', 'Galaxy S4', 'Samsung Galaxy S4'),
+            ('Framework Laptop', 'Framework 13', 'Framework Laptop 13'),
+        ):
+            self.assertEqual(R.model_name(parent, label), want)
+    def test_model_ending_in_the_line_moves_the_rest_after_it(self):
+        self.assertEqual(R.model_name('Apple MacBook Air', 'M1 MacBook Air'), 'Apple MacBook Air M1')
+        self.assertEqual(R.model_name('Pebble', 'original Pebble'), 'Pebble original')
+    def test_model_naming_only_the_line_gives_the_line(self):
+        for parent, label in (
+            ('IBM / Unicomp Model M', 'Model M'),
+            ('Beelink mini PC', 'mini PC'),
+            ('Zojirushi Rice cooker', 'rice cooker'),
+            ('HP 15C', 'HP-15C'),
+            ('AMD Radeon RX 7900 XTX', '7900'),
+        ):
+            self.assertEqual(R.model_name(parent, label), parent)
+    def test_number_extending_a_short_last_word_replaces_it(self):
+        self.assertEqual(R.model_name('Samsung Galaxy S', 'S5'), 'Samsung Galaxy S5')
+        self.assertEqual(R.model_name('Leica Q', 'Q2'), 'Leica Q2')
+        self.assertEqual(R.model_name('AMD Ryzen 7', '7800X3D'), 'AMD Ryzen 7800X3D')
+    def test_short_last_word_does_not_swallow_a_longer_label(self):
+        self.assertEqual(R.model_name('IBM Model M', 'SSK'), 'IBM Model M SSK')
+        self.assertEqual(R.model_name('Acme M', 'Max'), 'Acme M Max')
+    def test_unrelated_words_are_kept(self):
+        self.assertEqual(R.model_name('Google Chromecast', 'with Google TV'), 'Google Chromecast with Google TV')
+
+class RefineProduct(unittest.TestCase):
+    def refine(self, brand, line, model=None, kind=None):
+        return R.refine_product(dict(brand=brand, line=line, model=model, product_type=kind, category='laptops'))
+    def test_framework_desktop_is_not_the_laptop(self):
+        for line, model, kind in (('Desktop', None, 'desktop computer'), ('', 'Desktop', 'desktop computer'), ('', None, 'mini ITX gaming PC')):
+            p = self.refine('Framework', line, model, kind)
+            self.assertEqual((p['line'], p['category']), ('Desktop', 'desktops'))
+    def test_framework_laptop_is_untouched(self):
+        p = self.refine('Framework', 'Laptop 13', None, 'laptop')
+        self.assertEqual((p['line'], p['category']), ('Laptop 13', 'laptops'))
+    def test_bambu_x1_spellings_are_one_printer(self):
+        for line, model in (('X1', 'X1C'), ('', 'X1C'), ('X1', None), ('X1 Carbon', 'X1C'), ('X1C', None), ('', 'X1-Carbon'), ('X1 Carbon', 'Combo')):
+            p = self.refine('Bambu Lab', line, model, '3D printer')
+            self.assertEqual((p['line'], p['model']), ('X1 Carbon', None), (line, model))
+    def test_other_bambu_printers_are_untouched(self):
+        p = self.refine('Bambu Lab', 'X1E', None, '3D printer')
+        self.assertEqual(p['line'], 'X1E')
+        p = self.refine('Bambu Lab', 'P1', 'P1S', '3D printer')
+        self.assertEqual((p['line'], p['model']), ('P1', 'P1S'))
+    def test_corsair_vengeance_splits_by_what_it_is(self):
+        p = self.refine('Corsair', 'Vengeance', 'K70')
+        self.assertEqual((p['line'], p['model'], p['category']), ('K70', None, 'keyboards'))
+        p = self.refine('Corsair', 'Vengeance', 'a7500 AIR', 'desktop PC')
+        self.assertEqual((p['line'], p['model'], p['category']), ('Vengeance a7500 AIR', None, 'desktops'))
+        p = self.refine('Corsair', 'Vengeance', 'CMK64GX4M4A2400C14', 'memory kit')
+        self.assertEqual((p['line'], p['category']), ('Vengeance', 'pc_components'))
+
 class VerdictWording(unittest.TestCase):
     def test_singular_verdict(self):
         h = SITE.product_page(dict(E, own=3, pos=1, neg=0))

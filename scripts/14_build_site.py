@@ -38,7 +38,7 @@ LINE_RULES=[ # (brand regex, line regex, canonical brand, canonical line)
  (r'kinesis',r'advantage|^$','kinesis','Advantage'),(r'.',r'^ergodox','zsa','ErgoDox'),(r'zsa',r'moonlander','zsa','Moonlander'),(r'ibm|unicomp|lenovo',r'^model m','ibm/unicomp','Model M'),(r'.',r'^(hhkb|happy hacking)','pfu','HHKB'),
  (r'.',r'^aeropress','aeropress','AeroPress'),(r'aeropress',r'^$','aeropress','AeroPress'),(r'.',r'^roomba','irobot','Roomba'),(r'irobot',r'^$','irobot','Roomba'),(r'raspberry',r'.','raspberry pi','Raspberry Pi'),(r'.',r'^raspberry pi','raspberry pi','Raspberry Pi'),(r'.',r'^instant ?pot','instant pot','Instant Pot'),(r'instant',r'^$','instant pot','Instant Pot'),(r'zojirushi',r'rice|neuro|induction','zojirushi','Rice cooker'),(r'philips',r'hue','philips','Hue'),
  (r'creality',r'^ender','creality','Ender'),(r'prusa',r'.*','prusa','Prusa'),(r'apple',r'^tv\b','apple','TV'),(r'qnap',r'.','qnap','NAS'),
- (r'.',r'^steam deck','valve','Steam Deck'),(r'framework',r'.','framework','Laptop'),(r'kobo',r'.*','kobo','Kobo'),(r'rakuten',r'kobo','kobo','Kobo'),(r'leatherman',r'.*','leatherman','Leatherman'),
+ (r'.',r'^steam deck','valve','Steam Deck'),(r'framework',r'^desktop$','framework','Desktop'),(r'framework',r'.','framework','Laptop'),(r'kobo',r'.*','kobo','Kobo'),(r'rakuten',r'kobo','kobo','Kobo'),(r'leatherman',r'.*','leatherman','Leatherman'),
 ]
 LINE_RULES=[(re.compile(a),re.compile(b),c,d) for a,b,c,d in LINE_RULES]
 BN={'ibm':'IBM','geekdesk':'','fully':'Fully','uplift':'Uplift','flexispot/autonomous':'FlexiSpot / Autonomous','ergotron':'Ergotron','ikea':'IKEA','håg':'HÅG','humanscale':'Humanscale','secretlab':'Secretlab','remarkable':'','oneplus':'OnePlus','fairphone':'','system76':'','garmin':'','fitbit':'','sonos':'','das keyboard':'','microsoft':'Microsoft','sennheiser':'Sennheiser','beyerdynamic':'Beyerdynamic','audio-technica':'Audio-Technica','lg':'LG','synology':'Synology','ubiquiti':'Ubiquiti','mikrotik':'MikroTik','meta':'Meta','apple':'Apple','lenovo':'Lenovo','herman miller':'Herman Miller','steelcase':'Steelcase','amazon':'Amazon','dell':'Dell','sony':'Sony','bose':'Bose','logitech':'Logitech','google':'Google','samsung':'Samsung','kinesis':'Kinesis','zsa':'ZSA','ibm/unicomp':'IBM / Unicomp','pfu':'PFU','aeropress':'','irobot':'iRobot','raspberry pi':'','instant pot':'','zojirushi':'Zojirushi','philips':'Philips','valve':'Valve','framework':'Framework','kobo':'','leatherman':'','creality':'Creality','prusa':'','qnap':'QNAP'}
@@ -106,6 +106,7 @@ ms=[];bad=0
 def add_products(cid,products,M):
     for p in products:
         if not L.keep_mention(p): continue
+        p=SR.refine_product(p)
         cat=SR.refile(recat(p.get('category'),p.get('brand'),p.get('line')),p.get('product_type'),p.get('brand'),p.get('line'))
         p=dict(p,line=SR.line_for(p.get('brand'),p.get('line'),cat))
         cb,cl=canon(p.get('brand'),p.get('line'))

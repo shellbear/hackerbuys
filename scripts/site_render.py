@@ -57,10 +57,56 @@ def merges_across_lines(model):
     return len(model) >= 4 and bool(re.search(r"\d", model)) and not re.fullmatch(r"(?:19|20)\d\d", model)
 
 
+def _squash(text):
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
 def model_name(parent, label):
-    """Page name for a model: "Lenovo ThinkPad X1" + "X1 Carbon" reads as "Lenovo ThinkPad X1 Carbon"."""
-    last = parent.split()[-1].lower()
-    return f"{' '.join(parent.split()[:-1])} {label}".strip() if label.lower().startswith(last) else f"{parent} {label}"
+    """Page name for a model, without repeating the line: "Logitech MX Master" + "MX Master 3" reads as "Logitech MX Master 3"."""
+    words, parts = parent.split(), label.split()
+    if _squash(label) in {_squash(w) for w in words}:
+        return parent
+    tails = [(i, _squash(" ".join(words[i:]))) for i in range(len(words))]
+    # The model starts with the end of the name, whole words first: "MX Master 3", then "Galaxy S4".
+    for i, tail in tails:
+        for j in range(len(parts), 0, -1):
+            if _squash(" ".join(parts[:j])) == tail:
+                return " ".join(words + parts[j:])
+        rest = _squash(label)[len(tail):]
+        if _squash(label).startswith(tail) and (len(tail) >= 2 or rest[:1].isdigit()):
+            return " ".join(words[:i] + parts)
+    # The model ends with the end of the name: "M1 MacBook Air".
+    for _, tail in tails:
+        for j in range(1, len(parts)):
+            if _squash(" ".join(parts[j:])) == tail:
+                return " ".join(words + parts[:j])
+    if len(parts) > 1 and parts[0].lower() == words[0].lower() and parts[1][0].isdigit():
+        return " ".join(words + parts[1:])
+    return f"{parent} {label}"
+
+
+_FRAMEWORK_DESKTOP = re.compile(r"desktop|mini ?pc|mini.?itx", re.I)
+_BAMBU_X1 = re.compile(r"^x1(?:c+\b|\b)", re.I)
+_COMPUTER = re.compile(r"desktop|\bpc\b", re.I)
+_MEMORY = re.compile(r"memory|\bram\b", re.I)
+
+
+def refine_product(p):
+    """Fix products the model files under the wrong line, where line, model and type have to be read together."""
+    brand = (p.get("brand") or "").strip().lower()
+    line, model, kind = p.get("line") or "", p.get("model") or "", p.get("product_type") or ""
+    if brand.startswith("framework") and _FRAMEWORK_DESKTOP.search(f"{line} {model} {kind}"):
+        return dict(p, line="Desktop", model=None if _FRAMEWORK_DESKTOP.search(model) else p.get("model"), category="desktops")
+    if brand.startswith("bambu") and (_BAMBU_X1.search(line) or _BAMBU_X1.search(model)):
+        return dict(p, line="X1 Carbon", model=None)
+    if brand == "corsair" and line.lower() == "vengeance":
+        if re.fullmatch(r"k\d+", model, re.I):
+            return dict(p, line=model.upper(), model=None, category="keyboards")
+        if _COMPUTER.search(kind):
+            return dict(p, line=f"Vengeance {model}".strip(), model=None, category="desktops")
+        if _MEMORY.search(kind):
+            return dict(p, category="pc_components")
+    return p
 
 
 _MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()

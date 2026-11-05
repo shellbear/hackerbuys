@@ -54,7 +54,7 @@ Extraction runs newest first, and the site updates as it progresses.
 | Second pass | 18,783 comments from 2023 to 2026 that the filter rejected but that name a known product and carry an opinion signal |
 | Earlier years | A sample chosen to favor likely product opinions |
 | Product mentions | 128,523 |
-| Ranked products | 2,362 with 3 or more owners, plus 1,452 model pages |
+| Ranked products | 2,360 with 3 or more owners, plus 1,307 model pages |
 
 ## How it works
 
