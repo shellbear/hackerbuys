@@ -76,7 +76,7 @@ flowchart LR
 
 Extraction is automated and makes mistakes, so treat the site as a starting point. Every comment links to its source.
 
-On 400 hand-reviewed comments, scored against Sonnet labels, the current settings reached about **88% precision and 82% recall**, with a margin of about ±7 points. About 97% of extracted quotes appear word for word in their comments.
+On 400 labeled comments, scored against labels from Claude Sonnet, the current settings reached about **88% precision and 82% recall**, with a margin of about ±7 points. About 97% of extracted quotes appear word for word in their comments.
 
 - Comments that pass the filter but aren't clearly reviews are the noisiest, so rankings rely on first-hand verdicts.
 - Rising and Fading tags stay hidden until 2019–2026 are all fully scanned, because comparing years with different coverage would mislead.
