@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pick a random sample of comments the keyword filter rejected that mention a discovered product name and carry an opinion signal.
 Writes their ids for 22_build_queue.py --ids and prints how many such comments exist. No LLM.
-usage: 27_recall_sample.py analysis/eval/recall_ids.json [sample size]"""
+usage: 27_recall_sample.py analysis/eval/recall_ids.json [sample size] [scan 1 in N]"""
 import collections
 import csv
 import json
@@ -14,7 +14,8 @@ import recall_names as R
 from lexicon import OWN, REC
 
 out, size = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 500
-SCAN_SHARE = 50  # scan 1 comment in 50, which is plenty to estimate and sample from
+# 1 in 50 is plenty to estimate and sample from; pass 1 to scan every comment for the full second pass.
+SCAN_SHARE = int(sys.argv[3]) if len(sys.argv) > 3 else 50
 with open("/usr/share/dict/words") as f:
     english = {w.strip().lower() for w in f}
 english |= {w + "s" for w in english}

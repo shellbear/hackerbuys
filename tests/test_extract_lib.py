@@ -150,6 +150,11 @@ class ReadQueue(unittest.TestCase):
     def test_keeps_all_prompt_fields(self):
         r = list(L.read_queue(self.path))[1]
         self.assertEqual((r['y'], r['thread'], r['parent'], r['text']), (2026, 't', 'p', 'b'))
+    def test_min_year_skips_older_comments(self):
+        import duckdb
+        path = os.path.join(self.d.name, 'y.parquet')
+        duckdb.sql(f"""copy (select * from (values (1,10,2026,null,null,'a'),(2,20,2024,null,null,'b'),(3,30,2023,null,null,'c')) v(seq,id,y,thread,parent,"text")) to '{path}' (format parquet)""")
+        self.assertEqual([r['id'] for r in L.read_queue(path, min_year=2024)], [10, 20])
     def test_counting_while_reading_does_not_lose_rows(self):
         it = L.read_queue(self.path)
         L.queue_size(self.path)

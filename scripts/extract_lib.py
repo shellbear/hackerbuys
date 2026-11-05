@@ -256,12 +256,13 @@ def flatten(sources, text_by_id):
     return rows, seen
 
 
-def read_queue(path, fetch=5000):
+def read_queue(path, fetch=5000, min_year=None):
     """Yield queue rows in order. Uses its own connection: another query on a shared one would silently end this read."""
     import duckdb
     con = duckdb.connect()
     try:
-        cur = con.execute(f"""select id,y,thread,parent,"text" from read_parquet('{path}') order by seq""")
+        where = f"where y>={int(min_year)}" if min_year else ""
+        cur = con.execute(f"""select id,y,thread,parent,"text" from read_parquet('{path}') {where} order by seq""")
         while chunk := cur.fetchmany(fetch):
             for i, y, thread, parent, text in chunk:
                 yield {"id": i, "y": y, "thread": thread, "parent": parent, "text": text}

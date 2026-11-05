@@ -9,6 +9,7 @@ import datetime as dt
 MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
 MIN_MODEL_OWNERS,MAX_MODELS_LISTED=3,20
 QUEUE,OUT='data/extract/queue.parquet','extract/out'
+RECALL_QUEUE,RECALL_OUT='data/extract/recall_queue.parquet','extract/recall'
 R='analysis/run41k'
 text={};meta={}
 for f in glob.glob(f'{R}/in/*.jsonl'):
@@ -116,6 +117,9 @@ for f in sorted(glob.glob(f'{R}/out/*.jsonl')):
         add_products(d['id'],d['products'],meta[d['id']])
 docs=list(L.iter_results(OUT))
 done=L.load_done(OUT)
+# The second pass over comments the filter rejected has its own queue, and doesn't count toward complete years.
+recall_docs=list(L.iter_results(RECALL_OUT))
+recall_done=L.load_done(RECALL_OUT)
 con=duckdb.connect();con.execute("set timezone='UTC'")
 counts=collections.defaultdict(lambda:[0,0])
 for i,by,t,y,tier,root,thread,txt in con.execute(f"""select id,"by",time,y,tier,root_id,thread,"text" from read_parquet('{QUEUE}')""").fetchall():
@@ -124,6 +128,12 @@ for i,by,t,y,tier,root,thread,txt in con.execute(f"""select id,"by",time,y,tier,
         counts[y][1]+=1
         meta[i]=dict(by=by,time=str(t),tier=tier,root_id=root,root_title=thread)
         text[i]=dict(text=txt)
+if os.path.exists(RECALL_QUEUE):
+    for i,by,t,tier,root,thread,txt in con.execute(f"""select id,"by",time,tier,root_id,thread,"text" from read_parquet('{RECALL_QUEUE}')""").fetchall():
+        if i in recall_done and i not in meta:
+            meta[i]=dict(by=by,time=str(t),tier='recall',root_id=root,root_title=thread)
+            text[i]=dict(text=txt)
+docs+=recall_docs
 FULL=L.full_years({y:tuple(v) for y,v in counts.items()})
 TRENDS=L.trends_ready(FULL)
 for d in docs:

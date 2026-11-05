@@ -18,6 +18,7 @@ ap.add_argument("--batch-size", type=int, default=50)
 ap.add_argument("--effort", default="medium")
 ap.add_argument("--workers", type=int, default=1)
 ap.add_argument("--max-batches", type=int)
+ap.add_argument("--min-year", type=int, help="process only this year and newer")
 ap.add_argument("--floor", type=float, default=100, help="codex: stop below this credit balance")
 ap.add_argument("--max-credits", type=float, help="codex: stop after this many credits in this run")
 ap.add_argument("--budget-usd", type=float, help="anthropic: stop after this many dollars in this run")
@@ -171,7 +172,7 @@ def work(rows):
 os.makedirs(a.out, exist_ok=True)
 pending = set()
 with cf.ThreadPoolExecutor(a.workers) as ex:
-    for batch in L.batches(L.read_queue(a.queue), done, a.batch_size):
+    for batch in L.batches(L.read_queue(a.queue, min_year=a.min_year), done, a.batch_size):
         while len(pending) >= a.workers:
             finished, pending = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
             for f in finished:
