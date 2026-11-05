@@ -1,6 +1,6 @@
 # HackerBuys
 
-> The stuff Hacker News actually recommends. 1894 physical products ranked by the Hacker News commenters who own them, with every opinion linked to its comment.
+> The stuff Hacker News actually recommends. 2362 physical products ranked by the Hacker News commenters who own them, with every opinion linked to its comment.
 
 Opinions and ownership were extracted by AI, so they can be wrong: check the linked comment before relying on one. Counts cover the comments scanned so far, not all of Hacker News.
 
@@ -33,6 +33,7 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 - [Other PC parts and servers](https://hn.shellbear.me/c/pc-components)
 - [Boards and maker kit](https://hn.shellbear.me/c/sbc-maker)
 - [3D printers](https://hn.shellbear.me/c/printers-3d)
+- [Printers and scanners](https://hn.shellbear.me/c/printers)
 - [Calculators](https://hn.shellbear.me/c/calculators)
 - [Consoles and handhelds](https://hn.shellbear.me/c/consoles)
 - [VR and AR headsets](https://hn.shellbear.me/c/vr-ar)

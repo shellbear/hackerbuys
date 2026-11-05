@@ -1,4 +1,5 @@
 """Render real HTML pages for the site: content is in the page, and site/app.js adds sorting and filters on top."""
+import collections
 import html, json, re
 
 ORIGIN = "https://hn.shellbear.me"
@@ -73,15 +74,50 @@ def month_label(ym):
 _LIGHT_TYPE = re.compile(r"\b(lamps?|bulbs?|light bars?|monitor lights?|desk lights?|smart lights?|smart lighting|lighting|led strips?|monitor arms?|desk mats?)\b", re.I)
 _NOT_DESK_LIGHT = re.compile(r"\b(bike|bicycle|flashlight|headlamp|car|vehicle|torch)\b", re.I)
 _LIGHT_NAME = re.compile(r"\b(philips hue|hue|lifx|nanoleaf|tradfri|screenbar|ergotron|monitor arm)\b", re.I)
+_NOT_PAPER = re.compile(r"\b(3d|fdm|sla|resin|barcode|fingerprint|network|port|body|code|lidar)\b", re.I)
+_PAPER_TYPE = re.compile(r"\b(laser|inkjet|ink tank|photo|label|thermal|receipt|dot matrix|multifunction)\b.*\bprinters?\b|\bscanners?\b", re.I)
+_BARE_PRINTER = re.compile(r"(?:all-in-one )?printers?", re.I)
+_PAPER_BRAND = re.compile(r"\b(brother|epson|hp|canon|kyocera|xerox|lexmark|oki)\b", re.I)
+_PAPER_NAME = re.compile(r"\b(laserjet|officejet|deskjet|ecotank|pixma|imageclass|scansnap|coolscan|brother (hl|dcp|mfc))\b", re.I)
+_TYPE_HOMES = [(re.compile(p, re.I), c) for p, c in [
+    (r"\b(mouse|trackball)$", "mice_trackpads"),
+    (r"^(desktop pc|desktop computer|home computer)$", "desktops"),
+    (r"\bwebcams?$", "webcams_mics"),
+    (r"\b(earbuds|headphones)$", "headphones"),
+]]
+# Not hardware someone owns as a product here: operating systems, browsers, models, cars and ride services.
+NOT_PRODUCTS = re.compile(r"^(android|google-android|microsoft-windows|microsoft-windows-pc|microsoft-windows-laptop|windows|firefox|mozilla-firefox|google-chrome|apple-safari|google-gemma|openwrt|btrfs|linux|bluetooth|usb-c|waymo|tesla-model-.*)$")
+# Spellings of one product that a rule can't see: the mention moves to the key on the right.
+ALIASES = {
+    "raspberry-pi-raspberry-pi": "raspberry-pi", "thinkpad": "lenovo-thinkpad", "roomba": "irobot-roomba", "esp32": "espressif-esp32",
+    "moonlander": "zsa-moonlander", "pinecil": "pine64-pinecil", "ratta-supernote": "supernote", "glove80": "moergo-glove80",
+    "meta-oculus": "oculus", "amazon-eero": "eero", "odroid": "hardkernel-odroid", "nest-thermostat": "google-nest-thermostat",
+    "playdate": "panic-playdate", "planck": "olkb-planck", "atreus": "keyboardio-atreus", "soundcore": "anker-soundcore",
+    "paperlike": "dasung-paperlike", "inkplate": "soldered-inkplate", "framework": "framework-laptop", "bambu": "bambu-lab",
+    "flipper-devices-flipper-zero": "flipper-zero", "meta-ray-ban-meta": "ray-ban-meta", "ikea-tr-dfri": "ikea-tradfri", "signify-hue": "philips-hue",
+}
+ALIAS_PREFIXES = (("onyx-boox", "boox"), ("western-digital-wd-", "western-digital-"), ("hp-hp-", "hp-"))
+GENERIC_PRODUCTS = frozenset("""chromebook laptop heat-pump heat-pump-water-heater fountain-pen e-bike ebike monitor dishwasher vertical-mouse
+    standing-desk pc moka-pot 4k-monitor oled-monitor 3d-printer air-purifier air-fryer cargo-bike road-bike trackpad android-phone android-tablet crt tv phone
+    mechanical-keyboard vr-headset cast-iron oled""".split())
 THIN_CATEGORY = 20
 FEW_OWNERS = 2
 MIXED_MIN_TYPED = 3
 MIXED_TOP_SHARE = 0.6
+FOCUSED_MIN_TYPED = 5
+CATCH_ALL = "other_physical"
 
 
 def refile(category, product_type, brand, line):
-    """Keep lights and desk gear together: product type decides, with names covering the earlier sample, which has no type."""
+    """Correct a category from the product type: printers, clear misfiles, and lights and desk gear.
+    Names cover the earlier sample, which has no type."""
     kind = product_type or ""
+    name = f"{brand or ''} {line or ''}"
+    if not _NOT_PAPER.search(kind) and (_PAPER_TYPE.search(kind) or _PAPER_NAME.search(name) or (_BARE_PRINTER.fullmatch(kind.strip()) and _PAPER_BRAND.search(name))):
+        return "printers"
+    for pattern, home in _TYPE_HOMES:
+        if pattern.search(kind):
+            return home
     if _NOT_DESK_LIGHT.search(kind):
         return category
     if _LIGHT_TYPE.search(kind) or (not kind and _LIGHT_NAME.search(f"{brand} {line}")):
@@ -89,13 +125,76 @@ def refile(category, product_type, brand, line):
     return category
 
 
-def mixed_brand(categories):
-    """A brand-level entry spread across categories can't be ranked as one thing. Lodge stays; Samsung doesn't."""
-    kinds = [c for c in categories if c]
-    if len(kinds) < MIXED_MIN_TYPED:
+def _product_kind(product_type):
+    """The last word names the kind of thing: "drawing tablet" and "graphics tablets" are both tablets."""
+    words = (product_type or "").strip().lower().split()
+    if not words:
+        return ""
+    word = words[-1]
+    return word[:-1] if word.endswith("s") and not word.endswith("ss") else word
+
+
+def _spread(values):
+    """True when there's enough evidence and no single value clearly leads."""
+    if len(values) < MIXED_MIN_TYPED:
         return False
-    top = max(kinds.count(k) for k in set(kinds))
-    return top / len(kinds) < MIXED_TOP_SHARE
+    top = max(values.count(v) for v in set(values))
+    return top / len(values) < MIXED_TOP_SHARE
+
+
+def mixed_brand(categories, product_types=()):
+    """A brand-level entry spread across categories can't be ranked as one thing. Category labels are noisy, so a brand
+    whose comments all describe one kind of product still counts as focused. Lodge and Wacom stay; Samsung doesn't."""
+    if not _spread([c for c in categories if c]):
+        return False
+    kinds = [k for k in map(_product_kind, product_types) if k]
+    return len(kinds) < FOCUSED_MIN_TYPED or _spread(kinds)
+
+
+def home_category(categories):
+    """A brand gets one category: the most common, preferring a real one to the catch-all unless it's only a stray."""
+    counts = collections.Counter(c for c in categories if c)
+    catch_all = counts.pop(CATCH_ALL, 0)
+    if not counts:
+        return CATCH_ALL if catch_all else None
+    top, n = min(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    return top if n * 2 >= catch_all else CATCH_ALL
+
+
+def _alias(key):
+    key = ALIASES.get(key, key)
+    for old, new in ALIAS_PREFIXES:
+        if key.startswith(old):
+            return new + key[len(old):]
+    return key
+
+
+def clean_mentions(mentions):
+    """Drop what isn't owned hardware and merge spellings of one product: known aliases, then keys differing only by punctuation."""
+    kept = [m for m in mentions if not NOT_PRODUCTS.match(m["key"])]
+    counts = collections.Counter(_alias(m["key"]) for m in kept)
+    winners = {}
+    for key, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+        winners.setdefault(key.replace("-", ""), key)
+    final = lambda m: winners[_alias(m["key"]).replace("-", "")]
+    # Moved mentions take the name of those already under the winning key.
+    names = collections.defaultdict(collections.Counter)
+    for m in kept:
+        if m["key"] == final(m):
+            names[m["key"]][(m["cb"], m["cl"], m["disp"])] += 1
+    out = []
+    for m in kept:
+        key = final(m)
+        m = dict(m, key=key)
+        if names[key]:
+            m["cb"], m["cl"], m["disp"] = names[key].most_common(1)[0][0]
+        out.append(m)
+    return out
+
+
+def generic_product(key):
+    """A kind of thing rather than a product someone could buy by name."""
+    return key in GENERIC_PRODUCTS or key.startswith(("unknown-", "generic-"))
 
 
 def line_for(brand, line, category):
@@ -279,7 +378,7 @@ class Site:
         if c.get("sg"):
             bits.append("<span>Still going</span>")
         if not c.get("fh"):
-            bits.append("<span>Hasn’t owned it</span>")
+            bits.append("<span>Doesn’t say they own it</span>")
         thread = f' <a href="https://news.ycombinator.com/item?id={e(c["root"])}" rel="noopener">in “{e(c["th"])}”</a>' if c.get("th") and c.get("root") else ""
         return f'<article class="c {cl}"><header>{"".join(bits)}</header><blockquote>{e(c["t"])}</blockquote><footer><a href="https://news.ycombinator.com/item?id={e(c["id"])}" rel="noopener">{e(c["by"])}, {e(c["d"])}</a>{thread}</footer></article>'
 
@@ -304,7 +403,7 @@ class Site:
         models = "".join(f'<li><a href="/p/{e(k)}">{e(n)}</a><span>{e(c)}</span></li>' for n, k, c in p.get("models") or [])
         models = f'<h2>Models</h2><ul class="moves">{models}</ul>' if models else ""
         main = (f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{reasons}{models}{moved}'
-                f'<h2>What owners wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>')
+                f'<h2>What people wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>')
         crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": cat, "item": ORIGIN + cat_path(p["c"])},
             {"@type": "ListItem", "position": 2, "name": p["n"], "item": f"{ORIGIN}/p/{p['k']}"}]}

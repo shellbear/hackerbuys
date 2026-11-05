@@ -249,9 +249,94 @@ class MixedBrands(unittest.TestCase):
         self.assertFalse(R.mixed_brand(['pc_components'] * 4 + ['desktops']))
     def test_too_little_evidence_is_not_mixed(self):
         self.assertFalse(R.mixed_brand(['tv_streaming', 'phones']))
+    def test_one_kind_of_product_filed_under_several_categories_is_not_mixed(self):
+        cats = ['other_physical'] * 4 + ['tablets'] * 3 + ['pc_components'] * 3
+        self.assertFalse(R.mixed_brand(cats, ['drawing tablet'] * 5 + ['graphics tablet'] * 5))
+    def test_plural_product_types_count_as_the_same_kind(self):
+        self.assertFalse(R.mixed_brand(['smart_home', 'cameras', 'webcams_mics'], ['security camera', 'security cameras', 'ip camera', 'security camera', 'security cameras']))
+    def test_many_kinds_of_product_stay_mixed(self):
+        cats = ['phones', 'tv_streaming', 'home_appliances', 'monitors']
+        self.assertTrue(R.mixed_brand(cats, ['smartphone', 'television', 'refrigerator', 'ssd']))
+    def test_too_few_types_fall_back_to_categories(self):
+        self.assertTrue(R.mixed_brand(['keyboards', 'pc_components', 'storage'], ['computer case', 'computer case', 'keyboard']))
+
+class HomeCategory(unittest.TestCase):
+    def test_most_common_category_wins(self):
+        self.assertEqual(R.home_category(['keyboards'] * 3 + ['desktops']), 'keyboards')
+    def test_named_category_beats_the_catch_all(self):
+        self.assertEqual(R.home_category(['other_physical'] * 11 + ['tablets'] * 8 + ['pc_components'] * 7), 'tablets')
+    def test_catch_all_stays_when_the_named_category_is_a_stray(self):
+        self.assertEqual(R.home_category(['other_physical'] * 5 + ['keyboards']), 'other_physical')
+    def test_ties_do_not_depend_on_comment_order(self):
+        self.assertEqual(R.home_category(['tablets', 'ereaders']), 'ereaders')
+        self.assertEqual(R.home_category(['ereaders', 'tablets']), 'ereaders')
     def test_mixed_brand_is_left_out_of_rankings_and_totals(self):
         s = R.Site(CATS, TAGS, 'x', [dict(E), dict(E, k='philips', mx=True)])
         self.assertEqual(len(s.live), 1)
+
+class PrintersAndTypes(unittest.TestCase):
+    def test_paper_printers_get_their_own_category(self):
+        for t in ('laser printer', 'color laser printer', 'inkjet printer', 'document scanner', 'film scanner'):
+            self.assertEqual(R.refile('printers_3d', t, 'Acme', ''), 'printers', t)
+    def test_bare_printer_type_uses_the_brand(self):
+        self.assertEqual(R.refile('printers_3d', 'printer', 'Brother', ''), 'printers')
+        self.assertEqual(R.refile('printers_3d', 'printer', 'Prusa', 'MK4'), 'printers_3d')
+    def test_3d_printers_and_other_scanners_stay(self):
+        self.assertEqual(R.refile('printers_3d', '3d printer', 'Bambu Lab', 'A1'), 'printers_3d')
+        self.assertEqual(R.refile('printers_3d', 'resin printer', 'Elegoo', ''), 'printers_3d')
+        self.assertEqual(R.refile('tools_edc', 'barcode scanner', 'Zebra', ''), 'tools_edc')
+        self.assertEqual(R.refile('printers_3d', '3d scanner', 'Revopoint', ''), 'printers_3d')
+    def test_printer_names_work_without_a_type(self):
+        self.assertEqual(R.refile('other_physical', '', 'HP', 'LaserJet'), 'printers')
+    def test_product_type_corrects_clear_misfiles(self):
+        self.assertEqual(R.refile('keyboards', 'ergonomic mouse', 'Logitech', 'Ergo'), 'mice_trackpads')
+        self.assertEqual(R.refile('keyboards', 'desktop pc', 'Corsair', 'Vengeance'), 'desktops')
+        self.assertEqual(R.refile('calculators', 'home computer', 'Texas Instruments', 'TI-99'), 'desktops')
+        self.assertEqual(R.refile('cameras', 'webcam', 'Logitech', ''), 'webcams_mics')
+        self.assertEqual(R.refile('power', 'wireless earbuds', 'Anker', 'Soundcore'), 'headphones')
+
+class CleanMentions(unittest.TestCase):
+    def m(self, key, disp=None, cb='', cl=''):
+        return dict(key=key, disp=disp or key, cb=cb, cl=cl)
+    def keys(self, ms):
+        return [x['key'] for x in R.clean_mentions(ms)]
+    def test_things_that_are_not_owned_hardware_are_dropped(self):
+        for k in ('android', 'google-android', 'microsoft-windows', 'mozilla-firefox', 'google-chrome', 'waymo', 'tesla-model-3'):
+            self.assertEqual(self.keys([self.m(k)]), [], k)
+    def test_hardware_with_similar_names_stays(self):
+        for k in ('microsoft-windows-phone', 'tesla-powerwall', 'openwrt-one', 'starlink', 'google-chromecast', 'sony-android-tv'):
+            self.assertEqual(self.keys([self.m(k)]), [k])
+    def test_known_aliases_merge_and_take_the_target_name(self):
+        ms = R.clean_mentions([self.m('raspberry-pi', 'Raspberry Pi', 'raspberry pi', ''), self.m('raspberry-pi-raspberry-pi', 'Raspberry Pi', 'raspberry pi', 'Raspberry Pi')])
+        self.assertEqual({x['key'] for x in ms}, {'raspberry-pi'})
+        self.assertEqual({(x['cb'], x['cl']) for x in ms}, {('raspberry pi', '')})
+    def test_brand_prefixes_merge(self):
+        ms = R.clean_mentions([self.m('boox-palma', 'Boox Palma'), self.m('boox-palma', 'Boox Palma'), self.m('onyx-boox-palma', 'Onyx Boox Palma')])
+        self.assertEqual([(x['key'], x['disp']) for x in ms], [('boox-palma', 'Boox Palma')] * 3)
+    def test_spelling_variants_merge_into_the_more_common(self):
+        ms = [self.m('casio-f-91w', 'Casio F-91W')] * 3 + [self.m('casio-f91w', 'Casio F91W')]
+        self.assertEqual({x['disp'] for x in R.clean_mentions(ms)}, {'Casio F-91W'})
+    def test_different_products_stay_apart(self):
+        self.assertEqual(sorted(set(self.keys([self.m('boox-note'), self.m('samsung-note')]))), ['boox-note', 'samsung-note'])
+    def test_input_is_not_changed(self):
+        one = self.m('onyx-boox-palma')
+        R.clean_mentions([one])
+        self.assertEqual(one['key'], 'onyx-boox-palma')
+
+class GenericProducts(unittest.TestCase):
+    def test_nouns_and_unknown_brands_are_generic(self):
+        for k in ('laptop', 'phone', 'heat-pump', 'android-tablet', 'unknown-chromebook', 'generic-fountain-pen'):
+            self.assertTrue(R.generic_product(k), k)
+    def test_real_products_are_not(self):
+        for k in ('framework-laptop', 'redox', 'dactyl-manuform', 'ikea-standing-desk', 'bialetti-moka-pot'):
+            self.assertFalse(R.generic_product(k), k)
+
+class CommentLabels(unittest.TestCase):
+    def test_non_owner_label_does_not_overclaim(self):
+        s = R.Site(CATS, TAGS, 'x', [dict(E)])
+        out = s._comment(dict(s='positive', fh=False, t='x', i=1, id=1, by='a', d='2026-01-01', th='', root=None))
+        self.assertIn('Doesn’t say they own it', out)
+        self.assertNotIn('Hasn’t owned it', out)
 
 class BrandAsProduct(unittest.TestCase):
     def test_benq_light_is_a_screenbar(self):

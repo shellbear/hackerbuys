@@ -17,7 +17,7 @@ for f in glob.glob(f'{R}/in/*.jsonl'):
         d=json.loads(l);text[d['id']]=d
 for l in open(f'{R}/meta.jsonl'):
     d=json.loads(l);meta[d['id']]=d
-BRAND={'ibm':'lenovo','mac':'apple','hewlett packard':'hp','hewlett-packard':'hp','logi':'logitech','google/lg':'google','amazon kindle':'amazon','irobot roomba':'irobot','hag':'håg','hermanmiller':'herman miller','hm':'herman miller','microsoft surface':'microsoft'}
+BRAND={'ibm/lenovo':'lenovo','mac':'apple','hewlett packard':'hp','hewlett-packard':'hp','logi':'logitech','google/lg':'google','amazon kindle':'amazon','irobot roomba':'irobot','hag':'håg','hermanmiller':'herman miller','hm':'herman miller','microsoft surface':'microsoft'}
 LINE_RULES=[ # (brand regex, line regex, canonical brand, canonical line)
  (r'.',r'^ergodox|^ergo dox','zsa','ErgoDox'),(r'ergodox',r'.*','zsa','ErgoDox'),(r'unicomp',r'.*','ibm/unicomp','Model M'),(r'.',r'^(hhkb|happy hacking)','pfu','HHKB'),(r'happy hacking|hhkb|^pfu',r'.*','pfu','HHKB'),
  (r'microsoft',r'^natural','microsoft','Natural Ergonomic Keyboard'),(r'microsoft',r'sculpt','microsoft','Sculpt Ergonomic'),(r'microsoft',r'^ergonomic keyboard','microsoft','Natural Ergonomic Keyboard'),(r'kinesis',r'freestyle','kinesis','Freestyle'),
@@ -28,7 +28,7 @@ LINE_RULES=[ # (brand regex, line regex, canonical brand, canonical line)
  (r'synology',r'.*','synology','NAS'),(r'ubiquiti|unifi',r'edge','ubiquiti','EdgeRouter'),(r'ubiquiti|unifi',r'.*','ubiquiti','UniFi'),(r'mikrotik',r'.*','mikrotik','Routers'),
  (r'remarkable',r'.*','remarkable','reMarkable'),(r'.',r'^remarkable','remarkable','reMarkable'),(r'oneplus',r'^oneplus$|^$','oneplus','OnePlus'),(r'fairphone',r'.*','fairphone','Fairphone'),(r'system76',r'.*','system76','System76'),(r'garmin',r'.*','garmin','Garmin'),(r'fitbit',r'.*','fitbit','Fitbit'),(r'sonos',r'.*','sonos','Sonos'),(r'das keyboard',r'.*','das keyboard','Das Keyboard'),(r'^meta$|oculus',r'quest','meta','Quest'),
  (r'.',r'^(macbook pro|mbp)\b','apple','MacBook Pro'),(r'.',r'^(macbook air|mba)\b','apple','MacBook Air'),(r'apple',r'^macbook\b','apple','MacBook'),
- (r'.',r'thinkpad.*\bx1\b|^x1 carbon|^x1\b','lenovo','ThinkPad X1'),(r'.',r'thinkpad ?\bt\d*|^t\d{2,3}s?$','lenovo','ThinkPad T-series'),(r'.',r'thinkpad ?\bx\d*','lenovo','ThinkPad X-series'),(r'.',r'thinkpad ?\bp\d*','lenovo','ThinkPad P-series'),(r'.',r'^thinkpad','lenovo','ThinkPad'),
+ (r'^ibm$',r'^trackpoint$','lenovo','TrackPoint'),(r'.',r'thinkpad.*\bx1\b','lenovo','ThinkPad X1'),(r'^(lenovo|ibm|thinkpad|)$',r'^x1 carbon|^x1\b','lenovo','ThinkPad X1'),(r'.',r'thinkpad ?\bt\d*','lenovo','ThinkPad T-series'),(r'^(lenovo|thinkpad|)$',r'^t\d{2,3}s?$','lenovo','ThinkPad T-series'),(r'.',r'thinkpad ?\bx\d*','lenovo','ThinkPad X-series'),(r'.',r'thinkpad ?\bp\d*','lenovo','ThinkPad P-series'),(r'.',r'^thinkpad','lenovo','ThinkPad'),
  (r'.',r'^aeron','herman miller','Aeron'),(r'.',r'^embody','herman miller','Embody'),(r'herman',r'^mirra','herman miller','Mirra'),(r'steelcase',r'^leap','steelcase','Leap'),(r'steelcase',r'^gesture','steelcase','Gesture'),
  (r'apple',r'^airpods pro','apple','AirPods Pro'),(r'apple',r'^airpods max','apple','AirPods Max'),(r'apple',r'^airpods','apple','AirPods'),(r'apple',r'^iphone se','apple','iPhone SE'),(r'apple',r'^iphone','apple','iPhone'),(r'apple',r'^ipad pro','apple','iPad Pro'),(r'apple',r'^ipad air','apple','iPad Air'),(r'apple',r'^ipad mini','apple','iPad mini'),(r'apple',r'^ipad','apple','iPad'),(r'apple',r'^mac ?mini','apple','Mac mini'),(r'apple',r'^mac studio','apple','Mac Studio'),(r'apple',r'^(magic )?trackpad','apple','Magic Trackpad'),(r'apple',r'magic mouse','apple','Magic Mouse'),(r'apple',r'watch','apple','Watch'),
  (r'.',r'^(kindle )?paperwhite|kindle paperwhite','amazon','Kindle Paperwhite'),(r'.',r'^kindle','amazon','Kindle'),(r'kindle',r'^$','amazon','Kindle'),
@@ -41,9 +41,10 @@ LINE_RULES=[ # (brand regex, line regex, canonical brand, canonical line)
  (r'.',r'^steam deck','valve','Steam Deck'),(r'framework',r'.','framework','Laptop'),(r'kobo',r'.*','kobo','Kobo'),(r'rakuten',r'kobo','kobo','Kobo'),(r'leatherman',r'.*','leatherman','Leatherman'),
 ]
 LINE_RULES=[(re.compile(a),re.compile(b),c,d) for a,b,c,d in LINE_RULES]
-BN={'geekdesk':'','fully':'Fully','uplift':'Uplift','flexispot/autonomous':'FlexiSpot / Autonomous','ergotron':'Ergotron','ikea':'IKEA','håg':'HÅG','humanscale':'Humanscale','secretlab':'Secretlab','remarkable':'','oneplus':'OnePlus','fairphone':'','system76':'','garmin':'','fitbit':'','sonos':'','das keyboard':'','microsoft':'Microsoft','sennheiser':'Sennheiser','beyerdynamic':'Beyerdynamic','audio-technica':'Audio-Technica','lg':'LG','synology':'Synology','ubiquiti':'Ubiquiti','mikrotik':'MikroTik','meta':'Meta','apple':'Apple','lenovo':'Lenovo','herman miller':'Herman Miller','steelcase':'Steelcase','amazon':'Amazon','dell':'Dell','sony':'Sony','bose':'Bose','logitech':'Logitech','google':'Google','samsung':'Samsung','kinesis':'Kinesis','zsa':'ZSA','ibm/unicomp':'IBM / Unicomp','pfu':'PFU','aeropress':'','irobot':'iRobot','raspberry pi':'','instant pot':'','zojirushi':'Zojirushi','philips':'Philips','valve':'Valve','framework':'Framework','kobo':'','leatherman':'','creality':'Creality','prusa':'','qnap':'QNAP'}
+BN={'ibm':'IBM','geekdesk':'','fully':'Fully','uplift':'Uplift','flexispot/autonomous':'FlexiSpot / Autonomous','ergotron':'Ergotron','ikea':'IKEA','håg':'HÅG','humanscale':'Humanscale','secretlab':'Secretlab','remarkable':'','oneplus':'OnePlus','fairphone':'','system76':'','garmin':'','fitbit':'','sonos':'','das keyboard':'','microsoft':'Microsoft','sennheiser':'Sennheiser','beyerdynamic':'Beyerdynamic','audio-technica':'Audio-Technica','lg':'LG','synology':'Synology','ubiquiti':'Ubiquiti','mikrotik':'MikroTik','meta':'Meta','apple':'Apple','lenovo':'Lenovo','herman miller':'Herman Miller','steelcase':'Steelcase','amazon':'Amazon','dell':'Dell','sony':'Sony','bose':'Bose','logitech':'Logitech','google':'Google','samsung':'Samsung','kinesis':'Kinesis','zsa':'ZSA','ibm/unicomp':'IBM / Unicomp','pfu':'PFU','aeropress':'','irobot':'iRobot','raspberry pi':'','instant pot':'','zojirushi':'Zojirushi','philips':'Philips','valve':'Valve','framework':'Framework','kobo':'','leatherman':'','creality':'Creality','prusa':'','qnap':'QNAP'}
 # Categories were fixed before extraction; these refine them from brand and line without another LLM pass.
 RECAT=[(re.compile(r,re.I),c) for r,c in [
+ (r'^\s*(?:xp-?pen|wacom|huion|gaomon)\b','tablets'),(r'^\s*psion\b','other_physical'),(r'^\s*loop\s*(?:earplugs?|quiet|experience|engage|switch|dream)?\s*$','bed_sleep'),
  (r'\bmac ?mini|\bimac\b|\bmac ?pro\b|mac studio|power ?mac|\bnuc\b|minisforum|beelink|lenovo tiny|thinkcentre|optiplex','desktops'),
  (r'radeon|geforce|\brtx\b|\bgtx\b|ryzen|threadripper|\bcore i\d|intel arc|nvidia gpu|phenom|\bxeon|\bepyc','gpus_cpus'),
  (r'synology|qnap|truenas|drobo|\bssd\b|seagate|samsung 8\d0|ocz vertex|x25-m|western digital|\bnas\b','storage'),
@@ -141,6 +142,7 @@ TRENDS=L.trends_ready(FULL)
 for d in docs:
     for r in d['results']:
         if r['id'] in meta: add_products(r['id'],r['products'],meta[r['id']])
+ms=SR.clean_mentions(ms)
 print('mentions',len(ms),'bad lines',bad,'comments',len({m['id'] for m in ms}))
 G=collections.defaultdict(list)
 for m in ms: G[m['key']].append(m)
@@ -196,13 +198,13 @@ def calc_tags(e,v,k,by_ten,gl):
     tc=collections.Counter(x.get('topic') for x in v).most_common(1)[0]
     if tc[0] and tc[1]>=.5*nc: T[tc[0]]=''
     return T
-GENERIC=set('apple dell lenovo asus hp acer sony samsung logitech microsoft google bose nokia ikea steelcase herman miller sennheiser beyerdynamic motorola htc amazon lg toshiba huawei xiaomi intel amd nvidia canon nikon anker'.split())|{'herman miller'}
+GENERIC=set('apple dell lenovo ibm asus hp acer sony samsung logitech microsoft google bose nokia ikea steelcase herman miller sennheiser beyerdynamic motorola htc amazon lg toshiba huawei xiaomi intel amd nvidia canon nikon anker'.split())|{'herman miller'}
 index=[]
 PUB={k for k,v in G.items() if len({x['by'] for x in v if x['first_hand']})>=MIN_PAGE_OWNERS}
 pages=[]
 def make(k,v,name=None,parent=None,parent_name=None):
     v=sorted(v,key=lambda x:x['time'])
-    cat=collections.Counter(x['category'] for x in v).most_common(1)[0][0]
+    cat=SR.home_category(x['category'] for x in v) if not parent and not v[0]['cl'] else collections.Counter(x['category'] for x in v).most_common(1)[0][0]
     latest={}
     for x in v:
         if x['first_hand']: latest[x['by']]=x
@@ -223,7 +225,7 @@ def make(k,v,name=None,parent=None,parent_name=None):
             if x['stance'] in('recommend','positive'): gens[g][1].add(x['by'])
             if x['stance']=='negative': gens[g][2].add(x['by'])
     gl=sorted(sorted(([g,len(a),len(b),len(c)] for g,(a,b,c) in gens.items()),key=lambda r:-r[1])[:12],key=lambda r:(0 if re.fullmatch(r'(19|20)\d\d',r[0]) else 1 if re.match(r'M\d',r[0]) else 2,r[0]))
-    brand_only=not parent and (not v[0]['cl']) and (v[0]['cb'] in GENERIC or not v[0]['cb'])
+    brand_only=not parent and (SR.generic_product(k) or ((not v[0]['cl']) and (v[0]['cb'] in GENERIC or not v[0]['cb'])))
     to=[] if parent else sorted(((names[t],t,len(s),len(moved[t].get(k,()))) for t,s in moved[k].items() if t in PUB),key=lambda r:-r[2])[:8]
     fr=[] if parent else sorted(((names[f],f,len(moved[f][k]),len(moved[k].get(f,()))) for f in moved if k in moved[f] and f in PUB),key=lambda r:-r[2])[:8]
     e=dict(k=k,n=name or names[k],c=cat,own=len(own),pos=pos,neg=neg,neu=neu,w=round(wilson(pos,pos+neg),4),rown=len(rec),rpos=rp,rneg=rn,rw=round(wilson(rp,rp+rn),4),lh=lh,maxt=max(by_ten.values()) if by_ten else None,still=still,fy=v[0]['y'],ly=v[-1]['y'],ld=v[-1]['time'][:7],nc=len({x['id'] for x in v}),bo=brand_only)
@@ -232,7 +234,7 @@ def make(k,v,name=None,parent=None,parent_name=None):
     e['tags']=list(why)
     if parent: e.update(pk=parent,pn=parent_name)
     if not parent and not v[0]['cl']: e['nl']=True
-    if e.get('nl') and SR.mixed_brand([x.get('category') for x in v]): e['mx']=True
+    if e.get('nl') and SR.mixed_brand([x.get('category') for x in v],[x.get('product_type') for x in v]): e['mx']=True
     index.append(e)
     seen=set();cs=[]
     for x in sorted(v,key=lambda x:(-(x['tenure_years'] or 0),x['time'])):
