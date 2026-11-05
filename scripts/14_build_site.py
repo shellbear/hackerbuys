@@ -215,6 +215,7 @@ for k,v in G.items():
     to=sorted(((names[t],t,len(s),len(moved[t].get(k,()))) for t,s in moved[k].items() if t in PUB),key=lambda r:-r[2])[:8]
     fr=sorted(((names[f],f,len(moved[f][k]),len(moved[k].get(f,()))) for f in moved if k in moved[f] and f in PUB),key=lambda r:-r[2])[:8]
     e=dict(k=k,n=names[k],c=cat,own=len(own),pos=pos,neg=neg,neu=neu,w=round(wilson(pos,pos+neg),4),rown=len(rec),rpos=rp,rneg=rn,rw=round(wilson(rp,rp+rn),4),lh=lh,maxt=max(by_ten.values()) if by_ten else None,still=still,fy=v[0]['y'],ly=v[-1]['y'],nc=len({x['id'] for x in v}),bo=brand_only)
+    e['ty']=[t for t,_ in collections.Counter((x.get('product_type') or '').strip().lower() for x in v if x.get('product_type')).most_common(2)]
     why={} if brand_only else calc_tags(e,v,k,by_ten,gl)
     e['tags']=list(why)
     index.append(e)

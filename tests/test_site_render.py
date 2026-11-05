@@ -73,6 +73,12 @@ class Indexing(unittest.TestCase):
     def test_robots_points_to_sitemap(self):
         self.assertIn('Sitemap: https://hn.shellbear.me/sitemap.xml', R.robots())
 
+class Icons(unittest.TestCase):
+    def test_pages_link_the_favicons(self):
+        h = SITE.product_page(E)
+        for tag in ('rel="icon" href="/favicon.svg"', 'rel="alternate icon" href="/favicon.ico"', 'rel="apple-touch-icon" href="/apple-touch-icon.png"'):
+            self.assertIn(tag, h)
+
 class Meta(unittest.TestCase):
     def test_reads_categories_and_tags_from_app_js(self):
         cats, tags = R.read_meta('site/app.js')

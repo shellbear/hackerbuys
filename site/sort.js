@@ -35,6 +35,23 @@
     if (tag) return `${name}: products according to Hacker News | HackerBuys`;
     return 'HackerBuys: The stuff Hacker News actually recommends.';
   }
-  const api = { sortRows, defaultDir, canSwap, listTitle };
+  const fold = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[øØ]/g, 'o').toLowerCase();
+  const startsWord = (text, word) => text.startsWith(word) || text.includes(' ' + word) || text.includes('-' + word);
+  const MAX_RESULTS = 8;
+  const MIN_RANKED = 3;
+  // Runs in the browser over the catalogue file: no server, and nothing typed leaves the page.
+  function searchProducts(products, query, cats) {
+    const words = fold(query).split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    const scored = [];
+    for (const p of products) {
+      const name = fold(p.n), rest = fold([...(p.ty || []), cats[p.c] || ''].join(' '));
+      if (!words.every(w => startsWord(name, w) || startsWord(rest, w))) continue;
+      const inName = words.every(w => startsWord(name, w));
+      scored.push({ p, rank: name.startsWith(words[0]) && inName ? 0 : inName ? 1 : 2 });
+    }
+    return scored.sort((a, b) => (a.p.own < MIN_RANKED) - (b.p.own < MIN_RANKED) || a.rank - b.rank || b.p.own - a.p.own).slice(0, MAX_RESULTS).map(x => x.p);
+  }
+  const api = { sortRows, defaultDir, canSwap, listTitle, searchProducts };
   if (typeof module !== 'undefined') module.exports = api; else root.TableSort = api;
 })(this);

@@ -77,6 +77,22 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 // Start downloading a product page when the pointer reaches its link, so the click feels immediate.
 document.addEventListener('pointerover',e=>{const a=e.target.closest&&e.target.closest('a[href^="/p/"]');if(a)loadPage(new URL(a.href).pathname).catch(()=>{})},{passive:true});
 addEventListener('popstate',e=>{const url=new URL(location.href);show(url,e.state&&e.state.y).catch(()=>location.reload())});
+function setupSearch(){const box=el('div',{class:'search'}),listId='search-results';
+ const results=el('ul',{id:listId,role:'listbox','aria-label':'Matching products',hidden:''});
+ const input=el('input',{type:'search',placeholder:'Search products',role:'combobox','aria-label':'Search products','aria-controls':listId,'aria-expanded':'false','aria-autocomplete':'list',autocomplete:'off',spellcheck:'false'});
+ let items=[],on=-1;
+ const close=()=>{results.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');on=-1};
+ const mark=i=>{on=i;items.forEach((x,k)=>x.setAttribute('aria-selected',String(k===i)));if(i>=0){input.setAttribute('aria-activedescendant',items[i].id);items[i].scrollIntoView({block:'nearest'})}else input.removeAttribute('aria-activedescendant')};
+ const draw=()=>{const q=input.value;if(!q.trim()||!DB)return close();const found=TableSort.searchProducts(DB.products,q,CATS);
+  items=found.map((p,i)=>el('li',{id:`search-${i}`,role:'option','aria-selected':'false'},el('a',{href:`/p/${p.k}`,tabindex:'-1'},el('b',{},p.n),el('span',{},`${CATS[p.c]||p.c} · ${p.own} owners`))));
+  results.replaceChildren(...(items.length?items:[el('li',{class:'none'},'No products match. Try a brand or product type.')]));results.hidden=false;input.setAttribute('aria-expanded','true');mark(items.length?0:-1)};
+ input.addEventListener('focus',()=>{loadDB().then(draw).catch(()=>{})});input.addEventListener('input',draw);
+ input.addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&items.length){e.preventDefault();mark((on+1)%items.length)}else if(e.key==='ArrowUp'&&items.length){e.preventDefault();mark((on-1+items.length)%items.length)}else if(e.key==='Enter'&&on>=0){e.preventDefault();items[on].querySelector('a').click()}else if(e.key==='Escape'){close();input.blur()}});
+ results.addEventListener('click',e=>{if(e.target.closest('a')){input.value='';close();input.blur()}});
+ document.addEventListener('pointerdown',e=>{if(!box.contains(e.target))close()});
+ document.addEventListener('keydown',e=>{if(e.key==='/'&&!e.metaKey&&!e.ctrlKey&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){e.preventDefault();input.focus()}});
+ box.append(input,results);$('header.top').append(box)}
+setupSearch();
 function start(){const old=oldHash();if(old)return location.replace(old);if('scrollRestoration'in history)history.scrollRestoration='manual';history.replaceState({y:0},'');
  const embedded=$('#product');if(embedded)return product(JSON.parse(embedded.textContent));
  const url=new URL(location.href);if(!TableSort.canSwap(url,location.origin))return;

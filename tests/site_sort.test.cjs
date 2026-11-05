@@ -73,3 +73,47 @@ test('list titles match the generated pages', () => {
   assert.equal(listTitle({ tag: 'bifl', name: 'Buy it for life' }), 'Buy it for life: products according to Hacker News | HackerBuys');
   assert.equal(listTitle({}), 'HackerBuys: The stuff Hacker News actually recommends.');
 });
+
+const { searchProducts } = require('../site/sort.js');
+const S = (n, own, ty = [], c = 'keyboards') => ({ n, own, ty, c, k: n.toLowerCase().replace(/\W+/g, '-') });
+const CATS = { keyboards: 'Keyboards', desks: 'Desks' };
+const found = (list, q) => names(searchProducts(list, q, CATS));
+test('search ignores case and word order', () => {
+  assert.deepEqual(found([S('Kinesis Advantage', 9)], 'advantage KINESIS'), ['Kinesis Advantage']);
+});
+test('search ignores accents in both directions', () => {
+  assert.deepEqual(found([S('HÅG Capisco', 9)], 'hag cap'), ['HÅG Capisco']);
+  assert.deepEqual(found([S('Hag Capisco', 9)], 'håg'), ['Hag Capisco']);
+});
+test('every word must match', () => {
+  assert.deepEqual(found([S('Kinesis Advantage', 9)], 'kinesis freestyle'), []);
+});
+test('product type finds products that do not name it', () => {
+  assert.deepEqual(found([S('Fully Jarvis', 9, ['standing desk'], 'desks')], 'standing desk'), ['Fully Jarvis']);
+});
+test('category name is searchable', () => {
+  assert.deepEqual(found([S('Fully Jarvis', 9, [], 'desks')], 'desks'), ['Fully Jarvis']);
+});
+test('name matches rank above type matches, however many owners', () => {
+  const list = [S('Logitech MX', 500, ['ergonomic mouse']), S('Ergotron Mouse Arm', 5)];
+  assert.deepEqual(found(list, 'mouse'), ['Ergotron Mouse Arm', 'Logitech MX']);
+});
+test('a name starting with the query ranks first, then more owners', () => {
+  const list = [S('Apple Kindle Case', 900), S('Kindle', 10), S('Amazon Kindle Paperwhite', 300)];
+  assert.deepEqual(found(list, 'kindle'), ['Kindle', 'Apple Kindle Case', 'Amazon Kindle Paperwhite']);
+});
+test('words match at word starts, not inside words', () => {
+  assert.deepEqual(found([S('Sharpie Pen', 5), S('Pen Plotter', 5)], 'harp'), []);
+});
+test('empty or space-only search returns nothing', () => {
+  assert.deepEqual(found([S('Kindle', 10)], '   '), []);
+});
+test('results are capped', () => {
+  const many = Array.from({ length: 30 }, (_, i) => S('Kindle ' + i, i));
+  assert.equal(searchProducts(many, 'kindle', CATS).length, 8);
+});
+
+test('products under the ranking threshold come after better-supported ones', () => {
+  const list = [S('standing desk', 2, [], 'desks'), S('IKEA Standing desk', 19, [], 'desks')];
+  assert.deepEqual(found(list, 'standing desk'), ['IKEA Standing desk', 'standing desk']);
+});
