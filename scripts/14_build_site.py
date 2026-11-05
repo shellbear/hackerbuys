@@ -199,7 +199,7 @@ for k,v in G.items():
     rec=[a for a in own if a['y']>=LAST-2];rp=sum(a['stance'] in('recommend','positive') for a in rec);rn=sum(a['stance']=='negative' for a in rec)
     by_ten={}
     for x in v:
-        if x['first_hand'] and x['tenure_years'] is not None and x['stance']!='negative': by_ten[x['by']]=max(by_ten.get(x['by'],0),x['tenure_years'])
+        if L.happy_long_owner(x): by_ten[x['by']]=max(by_ten.get(x['by'],0),x['tenure_years'])
     lh=sum(t>=3 for t in by_ten.values())
     still=len({x['by'] for x in v if x['still_going']})
     gens=collections.defaultdict(lambda:[set(),set(),set()])
@@ -249,6 +249,7 @@ for k in tags:
 for p in pages: write(f"site/p/{p['k']}.html",site.product_page(p))
 write('site/sitemap.xml',SR.sitemap(paths,index,dt.date.today().isoformat()))
 write('site/robots.txt',SR.robots())
+write('site/llms.txt',SR.llms_txt({k:v for k,v in cats.items() if any(p['c']==k for p in ranked)},len(ranked)))
 print('pages',len(pages),'categories and tags',len(paths)-1,'in sitemap',len(paths)+sum(SR.indexable(p) for p in index))
 print('products',len(index),'with 3+ owners',sum(e['own']>=3 for e in index))
 

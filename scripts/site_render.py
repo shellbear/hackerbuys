@@ -58,6 +58,27 @@ def sitemap(paths, products, date):
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>\n'
 
 
+def llms_txt(cats, count):
+    """A plain guide for AI tools, following the llms.txt convention."""
+    links = "\n".join(f"- [{name}]({ORIGIN}{cat_path(key)})" for key, name in cats.items())
+    return f"""# HackerBuys
+
+> {TAGLINE} {count} physical products ranked by the Hacker News commenters who own them, with every opinion linked to its comment.
+
+Opinions and ownership were extracted by AI, so they can be wrong: check the linked comment before relying on one. Counts cover the comments scanned so far, not all of Hacker News.
+
+## Data
+
+- [Sitemap of all product and category pages]({ORIGIN}/sitemap.xml)
+- [Full catalogue as JSON]({ORIGIN}/data/index.json): for each product, k is the page at /p/k, n the name, c the category, own the distinct owners, pos, neu and neg the verdicts, and ly the last year mentioned.
+- [Source code and methods](https://github.com/shellbear/hackerbuys)
+
+## Categories
+
+{{links}}
+""".replace("{links}", links)
+
+
 class Site:
     def __init__(self, cats, tags, coverage, products=()):
         self.cats, self.tags, self.coverage = cats, tags, coverage
@@ -84,7 +105,7 @@ class Site:
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">{robots_tag}
 <link rel="canonical" href="{e(ORIGIN + path)}">
-<meta property="og:site_name" content="HackerBuys"><meta property="og:type" content="website"><meta property="og:title" content="{e(title)}"><meta property="og:description" content="{e(desc)}"><meta property="og:url" content="{e(ORIGIN + path)}">
+<meta property="og:site_name" content="HackerBuys"><meta property="og:type" content="website"><meta property="og:title" content="{e(title)}"><meta property="og:description" content="{e(desc)}"><meta property="og:url" content="{e(ORIGIN + path)}"><meta property="og:image" content="{ORIGIN}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="HackerBuys: the stuff Hacker News actually recommends"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{e(title)}"><meta name="twitter:description" content="{e(desc)}"><meta name="twitter:image" content="{ORIGIN}/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="{FONTS}" rel="stylesheet">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="stylesheet" href="/style.css">{extra}</head>

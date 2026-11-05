@@ -79,6 +79,26 @@ class Icons(unittest.TestCase):
         for tag in ('rel="icon" href="/favicon.svg"', 'rel="alternate icon" href="/favicon.ico"', 'rel="apple-touch-icon" href="/apple-touch-icon.png"'):
             self.assertIn(tag, h)
 
+class Sharing(unittest.TestCase):
+    def test_pages_have_a_large_share_image(self):
+        h = SITE.product_page(E)
+        for tag in ('property="og:image" content="https://hn.shellbear.me/og.png"', 'property="og:image:width" content="1200"', 'property="og:image:height" content="630"', 'property="og:image:alt"', 'name="twitter:card" content="summary_large_image"', 'name="twitter:image" content="https://hn.shellbear.me/og.png"'):
+            self.assertIn(tag, h)
+    def test_twitter_title_matches_page(self):
+        self.assertIn('name="twitter:title" content="Kinesis Advantage: what 170 Hacker News owners think | HackerBuys"', SITE.product_page(E))
+
+class ForAi(unittest.TestCase):
+    TEXT = R.llms_txt(CATS, 42)
+    def test_points_to_sitemap_and_catalogue(self):
+        self.assertIn('https://hn.shellbear.me/sitemap.xml', self.TEXT)
+        self.assertIn('https://hn.shellbear.me/data/index.json', self.TEXT)
+    def test_lists_category_pages(self):
+        self.assertIn('[Mice and trackpads](https://hn.shellbear.me/c/mice-trackpads)', self.TEXT)
+    def test_explains_limits_for_quoting(self):
+        self.assertIn('extracted by AI', self.TEXT)
+    def test_starts_with_a_title(self):
+        self.assertTrue(self.TEXT.startswith('# HackerBuys'))
+
 class Meta(unittest.TestCase):
     def test_reads_categories_and_tags_from_app_js(self):
         cats, tags = R.read_meta('site/app.js')

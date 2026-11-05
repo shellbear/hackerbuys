@@ -285,6 +285,8 @@ TREND_YEARS = range(2019, 2027)
 
 def keep_mention(p):
     """Site rule: drop bare mentions by non-owners and excluded product types that slipped past the prompt."""
+    if "quote" in p and not (p["quote"] or "").strip():
+        return False
     if p.get("stance") == "neutral" and not p.get("first_hand"):
         return False
     return not _EXCLUDED_TYPE.search(p.get("product_type") or "")
@@ -315,3 +317,17 @@ def trends_ready(years):
 
 def trim_text(text, limit):
     return text if len(text) <= limit else text[:limit].rstrip() + "…"
+
+
+# "32 years old" describes the product, which the model sometimes reads as how long it was owned.
+_STATES_AGE = re.compile(r"\b\d+\+? ?(?:years?|yrs?) old\b", re.I)
+
+
+def happy_long_owner(p):
+    """Counts toward long-haul headlines only with a stated reason, because extreme values reach the most visible spots.
+    The earlier sample has no pros field, so its verdicts are taken as they are."""
+    if not p.get("first_hand") or p.get("tenure_years") is None or p.get("stance") == "negative":
+        return False
+    if _STATES_AGE.search(p.get("quote") or ""):
+        return False
+    return "pros" not in p or p.get("stance") == "recommend" or bool(p["pros"])

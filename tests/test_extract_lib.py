@@ -226,4 +226,32 @@ class SiteRules(unittest.TestCase):
     def test_long_text_is_trimmed(self):
         self.assertLessEqual(len(L.trim_text('x' * 5000, 1500)), 1501)
 
+class HappyOwner(unittest.TestCase):
+    def test_stated_reason_counts(self):
+        self.assertTrue(L.happy_long_owner(product(tenure_years=10, pros=['comfort'])))
+    def test_explicit_recommendation_counts(self):
+        self.assertTrue(L.happy_long_owner(product(tenure_years=10, stance='recommend', pros=[])))
+    def test_age_with_no_stated_reason_does_not_count(self):
+        self.assertFalse(L.happy_long_owner(product(tenure_years=32, stance='positive', pros=[])))
+    def test_negative_owner_does_not_count(self):
+        self.assertFalse(L.happy_long_owner(product(tenure_years=10, stance='negative', pros=['comfort'])))
+    def test_non_owner_does_not_count(self):
+        self.assertFalse(L.happy_long_owner(product(tenure_years=10, first_hand=False)))
+    def test_missing_tenure_does_not_count(self):
+        self.assertFalse(L.happy_long_owner(product(tenure_years=None)))
+    def test_older_sample_without_pros_field_still_counts(self):
+        p = product(tenure_years=10, stance='positive'); del p['pros']
+        self.assertTrue(L.happy_long_owner(p))
+class ProductAge(unittest.TestCase):
+    def test_quote_stating_product_age_does_not_count_as_ownership(self):
+        self.assertFalse(L.happy_long_owner(product(tenure_years=32, pros=['durability'], quote='My Kinesis Advantage is only a little bit younger at 32 years old.')))
+    def test_real_ownership_quote_counts(self):
+        self.assertTrue(L.happy_long_owner(product(tenure_years=20, pros=['reliability'], quote="I've been a happy user for two decades")))
+    def test_short_form_of_age_is_caught(self):
+        self.assertFalse(L.happy_long_owner(product(tenure_years=8, pros=['comfort'], quote='mine is 8 yrs old')))
+
+class EmptyQuote(unittest.TestCase):
+    def test_mention_with_empty_quote_is_dropped(self):
+        self.assertFalse(L.keep_mention(product(quote='')))
+
 if __name__ == '__main__': unittest.main()
