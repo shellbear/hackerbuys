@@ -35,7 +35,8 @@ if a.ids:
     c.executemany("insert into want values (?)", [[i] for i in ids])
     c.sql("delete from cands where id not in (select id from want)")
     # Labeled comments may fall outside the current filter, which is exactly what a recall test needs.
-    c.sql("""insert into cands select id,parent,"by",time,clean(text),length(clean(text)),false from read_parquet('data/raw/*.parquet')
+    sources = "['data/raw/*.parquet'" + (",'data/daily/*.parquet'" if daily else "") + "]"
+    c.sql(f"""insert into cands select id,parent,"by",time,clean(text),length(clean(text)),false from read_parquet({sources},union_by_name=true)
       where id in (select id from want) and id not in (select id from cands)""")
 else:
     c.sql("delete from cands where n<25 or id in (select id from read_json_auto('analysis/run41k/meta.jsonl'))")
