@@ -47,14 +47,16 @@ HackerBuys reads those comments and asks three questions: which product is this,
 
 Extraction runs newest first, and the site updates as it progresses.
 
-| | As of November 5, 2026 |
+| | As of November 6, 2026 |
 |---|---|
-| Comments scanned | 658,931 of about 41 million |
-| Complete years | 2023 to 2026 (through November 3), among comments that match the product filter |
+| Comments scanned | 828,493 of about 41 million |
+| Complete years | 2022 to 2026 (through November 4), among comments that match the product filter |
 | Second pass | 18,783 comments from 2023 to 2026 that the filter rejected but that name a known product and carry an opinion signal |
 | Earlier years | A sample chosen to favor likely product opinions |
-| Product mentions | 128,523 |
-| Ranked products | 2,360 with 3 or more owners, plus 1,307 model pages |
+| Product mentions | 177,261 |
+| Ranked products | 2,886 with 3 or more owners, plus 1,534 model pages |
+| Models | gpt-6-luna for 2023 to November 3, 2026; Claude Haiku 5.5 for 2022 and the daily updates |
+| Updates | Daily, through a [GitHub Actions job](#daily-updates) |
 
 ## How it works
 
@@ -80,6 +82,7 @@ Extraction is automated and makes mistakes, so treat the site as a starting poin
 On 400 labeled comments, scored against labels from Claude Sonnet, the current settings reached about **88% precision and 82% recall**, with a margin of about ±7 points. About 97% of extracted quotes appear word for word in their comments.
 
 - Comments that pass the filter but aren't clearly reviews are the noisiest, so rankings rely on first-hand verdicts.
+- A blind audit of 150 random kept mentions per model, judged by Claude Sonnet, found the first-hand verdicts that drive rankings correct about 84% of the time for Haiku (2022) and 80% for gpt-6-luna (2023), within ±8 points. Mentions by non-owners are right only about a third of the time for both, and Haiku keeps more of them.
 - Rising and Fading tags stay hidden until 2019–2026 are all fully scanned, because comparing years with different coverage would mislead.
 
 ## Run it yourself
