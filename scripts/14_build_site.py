@@ -1,9 +1,11 @@
 """Build static site JSON from the run41k sample plus the extraction pipeline's results in extract/out.
-Needs data/extract/queue.parquet for comment text. Counts cover scanned comments, not all of HN."""
+Comment text comes from corpus/ (see corpus.py). When the full local queue exists, corpus/archive is refreshed from it first.
+Counts cover scanned comments, not all of HN."""
 import json,glob,re,math,collections,os,shutil,sys
 sys.path.insert(0,'scripts')
 import duckdb
 import extract_lib as L
+import corpus as C
 import site_render as SR
 import datetime as dt
 MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
@@ -124,19 +126,30 @@ done=L.load_done(OUT)
 # The second pass over comments the filter rejected has its own queue, and doesn't count toward complete years.
 recall_docs=list(L.iter_results(RECALL_OUT))
 recall_done=L.load_done(RECALL_OUT)
+if os.path.exists(QUEUE):
+    print('archive months, rewritten',C.refresh_archive(QUEUE,RECALL_QUEUE,done,recall_done))
 con=duckdb.connect();con.execute("set timezone='UTC'")
 counts=collections.defaultdict(lambda:[0,0])
-for i,by,t,y,tier,root,thread,txt in con.execute(f"""select id,"by",time,y,tier,root_id,thread,"text" from read_parquet('{QUEUE}')""").fetchall():
-    counts[y][0]+=1
+for y,n in C.read_totals()['years'].items(): counts[int(y)][0]+=n
+def comments(sql):
+    return con.execute(sql).fetchall()
+# Processed comments of the full queue, then the daily queues (which count toward their year), then the second pass.
+for i,by,t,y,tier,root,thread,txt in comments(f"""select {C.COLS} from read_parquet('{C.ARCHIVE}/*.parquet') where tier<>'recall'"""):
     if i in done:
         counts[y][1]+=1
         meta[i]=dict(by=by,time=str(t),tier=tier,root_id=root,root_title=thread)
         text[i]=dict(text=txt)
-if os.path.exists(RECALL_QUEUE):
-    for i,by,t,tier,root,thread,txt in con.execute(f"""select id,"by",time,tier,root_id,thread,"text" from read_parquet('{RECALL_QUEUE}')""").fetchall():
-        if i in recall_done and i not in meta:
-            meta[i]=dict(by=by,time=str(t),tier='recall',root_id=root,root_title=thread)
+if glob.glob(f'{C.DAILY}/*.parquet'):
+    for i,by,t,y,tier,root,thread,txt in comments(f"""select {C.COLS} from read_parquet('{C.DAILY}/*.parquet')"""):
+        counts[y][0]+=1
+        if i in done:
+            counts[y][1]+=1
+            meta[i]=dict(by=by,time=str(t),tier=tier,root_id=root,root_title=thread)
             text[i]=dict(text=txt)
+for i,by,t,y,tier,root,thread,txt in comments(f"""select {C.COLS} from read_parquet('{C.ARCHIVE}/*.parquet') where tier='recall'"""):
+    if i in recall_done and i not in meta:
+        meta[i]=dict(by=by,time=str(t),tier='recall',root_id=root,root_title=thread)
+        text[i]=dict(text=txt)
 docs+=recall_docs
 FULL=L.full_years({y:tuple(v) for y,v in counts.items()})
 TRENDS=L.trends_ready(FULL)
@@ -277,7 +290,8 @@ def write(path,body):
     with open(path,'w') as f: f.write(body)
 for d in ('site/data/p','site/p','site/c','site/t'): shutil.rmtree(d,ignore_errors=True)
 span=None if not FULL else str(min(FULL)) if len(FULL)==1 else f"{min(FULL)} to {max(FULL)}"
-cover=f"Based on {len(meta):,} of about 41 million comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
+# Rounded down so a daily update does not rewrite every page footer.
+cover=f"Based on more than {len(meta)//10000*10000:,} comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
 cats,tags=SR.read_meta('site/app.js')
 site=SR.Site(cats,tags,cover,index)
 ranked=sorted((p for p in index if p['own']>=3 and not p['bo'] and not p.get('pk') and not p.get('mx')),key=lambda p:(-p['w'],-p['own']))

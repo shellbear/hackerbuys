@@ -7,7 +7,7 @@ import argparse, glob, json, os, sys, time
 sys.path.insert(0, "scripts")
 import duckdb
 from extract_lib import REFERENCE_OPENING, SHORT_REPLY_CHARS
-from lexicon import CATEGORIES, OWN, REC, RETAIL
+from queue_sql import CLEAN, daily_candidates
 
 ap = argparse.ArgumentParser()
 ap.add_argument("out")
@@ -17,17 +17,11 @@ t0 = time.time()
 os.makedirs(os.path.dirname(a.out), exist_ok=True)
 c = duckdb.connect()
 c.sql("set threads=12; set memory_limit='24GB'; set preserve_insertion_order=false; set timezone='UTC'")
-c.sql(r"""create macro clean(t) as regexp_replace(regexp_replace(replace(replace(replace(replace(replace(replace(t,'&#x27;',''''),'&quot;','"'),'&#x2F;','/'),'&gt;','>'),'&lt;','<'),'&amp;','&'),'<p>',' ','g'),'<[^>]+>',' ','g')""")
+c.sql(CLEAN)
 c.sql("""create table cands as select id,parent,"by",time,txt,n,(f_mycat or f_own or f_rec or f_link) fun from 'data/derived/cand.parquet'""")
 daily = glob.glob("data/daily/*.parquet")
-# The archive filter in 01_funnel.py ends where the raw files end; days after that get the same regexes here.
 if daily:
-    cat_any = "|".join(CATEGORIES.values())
-    c.sql(rf"""insert into cands select id,parent,"by",time,txt,length(txt),
-       regexp_matches(lt,$${OWN}$$) or regexp_matches(lt,$${REC}$$) or regexp_matches(lt,$${RETAIL}$$) or regexp_matches(lt,$$\bmy (?:\w+ ){{0,3}}(?:{cat_any})s?\b$$)
-      from (select *,lower(txt) lt from (select id,parent,"by",time,clean(text) txt from read_parquet('data/daily/*.parquet')
-            where type=2 and coalesce(deleted,0)=0 and coalesce(dead,0)=0 and text is not null and "by"<>'' and text<>'[delayed]'))
-      where regexp_matches(lt,$$\b(?:{cat_any})s?\b|{RETAIL}$$)""")
+    c.sql(f"insert into cands {daily_candidates(repr('data/daily/*.parquet'))}")
 if a.ids:
     with open(a.ids) as f:
         ids = [r["id"] for r in json.load(f)]

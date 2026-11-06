@@ -97,20 +97,35 @@ uv sync
 
 # Extract: stop any time, and rerunning continues where it left off
 .venv/bin/python scripts/23_extract.py --adapter codex --model gpt-6-luna --workers 8 --max-credits 50
+.venv/bin/python scripts/23_extract.py --adapter claude --model claude-haiku-5-5 --effort low --workers 16 --min-year 2022 --max-year 2022
 .venv/bin/python scripts/26_progress.py
 
-# Build the site, then preview it
+# Build the site (this also refreshes corpus/archive from the local queue), then preview it
 .venv/bin/python scripts/14_build_site.py
 npx wrangler dev
 
 # Test
-.venv/bin/python -m unittest tests.test_extract_lib tests.test_site_render
+.venv/bin/python -m unittest tests.test_extract_lib tests.test_site_render tests.test_corpus
 node --test tests/site_sort.test.cjs
 ```
 
-The Codex adapter re-reads your balance before each batch. It stops below `--floor`, at `--max-credits`, if the balance rises, or on a spending limit. A Haiku adapter is included, but it hasn't been run yet.
+The Codex adapter re-reads your balance before each batch. It stops below `--floor`, at `--max-credits`, if the balance rises, or on a spending limit.
+
+The `claude` adapter runs Haiku through the Claude Code CLI on a logged-in subscription, with no tools, settings or MCP servers. Thinking can't be turned off there, so a batch takes about 75 seconds; use more workers. On the 400 labeled comments it reached 79% precision and 97% recall, against 88% and 80% for gpt-6-luna, so it keeps more borderline comments. Three failed batches in a row, for example at a usage limit, stop the run.
 
 Pushes to `main` deploy to Cloudflare Workers automatically.
+
+### Daily updates
+
+[`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs [`scripts/31_daily.py`](scripts/31_daily.py) every morning. It fetches each finished day after the last one covered, queues it with [`scripts/30_daily_queue.py`](scripts/30_daily_queue.py), extracts it with Haiku, rebuilds the site and pushes, which deploys. It works from a plain checkout because everything the site needs is in `corpus/`:
+
+- `corpus/archive/<month>.parquet`: text and details of the comments already processed from the full local queue
+- `corpus/totals.json`: candidates per year in the full queue, and its last day
+- `corpus/daily/<day>.parquet`: the queue for each day after that
+
+The workflow needs a `CLAUDE_CODE_OAUTH_TOKEN` repository secret, made with `claude setup-token`. Leftover comments, for example after a usage limit, are picked up the next day.
+
+The 15 GB archive and `data/extract/queue.parquet` stay local and are only needed to process older years. After a local extraction run, build the site to refresh `corpus/archive`, then commit it.
 
 ## Project layout
 
@@ -118,6 +133,7 @@ Pushes to `main` deploy to Cloudflare Workers automatically.
 scripts/    filter, queue, extraction and site build
 site/       the published site: generated pages plus app.js, sort.js and style.css
 extract/    extraction results, one JSON file per batch
+corpus/     comment text for the site build and the daily queues
 analysis/   feasibility report, evaluation sets and labels
 tests/      Python and JavaScript tests
 ```

@@ -155,6 +155,11 @@ class ReadQueue(unittest.TestCase):
         path = os.path.join(self.d.name, 'y.parquet')
         duckdb.sql(f"""copy (select * from (values (1,10,2026,null,null,'a'),(2,20,2024,null,null,'b'),(3,30,2023,null,null,'c')) v(seq,id,y,thread,parent,"text")) to '{path}' (format parquet)""")
         self.assertEqual([r['id'] for r in L.read_queue(path, min_year=2024)], [10, 20])
+    def test_max_year_skips_newer_comments(self):
+        import duckdb
+        path = os.path.join(self.d.name, 'm.parquet')
+        duckdb.sql(f"""copy (select * from (values (1,10,2023,null,null,'a'),(2,20,2022,null,null,'b'),(3,30,2021,null,null,'c')) v(seq,id,y,thread,parent,"text")) to '{path}' (format parquet)""")
+        self.assertEqual([r['id'] for r in L.read_queue(path, min_year=2022, max_year=2022)], [20])
     def test_counting_while_reading_does_not_lose_rows(self):
         it = L.read_queue(self.path)
         L.queue_size(self.path)
@@ -187,6 +192,34 @@ class CodexCommand(unittest.TestCase):
         self.assertNotIn('code_mode_host', self.CMD)
     def test_instructions_come_from_the_given_file(self):
         self.assertIn('model_instructions_file="i.md"', self.CMD)
+
+class ClaudeCommand(unittest.TestCase):
+    CMD = L.claude_command('claude-haiku-5-5', 'low', {'type': 'object'}, 'i.md')
+    def test_uses_requested_model_effort_and_instructions(self):
+        for flag, value in (('--model', 'claude-haiku-5-5'), ('--effort', 'low'), ('--system-prompt-file', 'i.md')):
+            self.assertEqual(self.CMD[self.CMD.index(flag) + 1], value)
+    def test_comment_text_gets_no_tools_settings_or_mcp(self):
+        self.assertEqual(self.CMD[self.CMD.index('--tools') + 1], '')
+        self.assertEqual(self.CMD[self.CMD.index('--setting-sources') + 1], '')
+        for flag in ('--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence'):
+            self.assertIn(flag, self.CMD)
+
+class ClaudeOutput(unittest.TestCase):
+    OK = {'type': 'result', 'subtype': 'success', 'is_error': False, 'structured_output': {'results': []},
+          'usage': {'input_tokens': 2, 'cache_creation_input_tokens': 100, 'cache_read_input_tokens': 4000, 'output_tokens': 50, 'output_tokens_details': {'thinking_tokens': 10}}}
+    def test_returns_structured_output_and_usage(self):
+        text, usage = L.claude_output(json.dumps(self.OK))
+        self.assertEqual(json.loads(text), {'results': []})
+        self.assertEqual(usage, {'input_tokens': 4102, 'cached_input_tokens': 4000, 'output_tokens': 50, 'reasoning_output_tokens': 10})
+    def test_usage_limit_error_raises(self):
+        with self.assertRaises(RuntimeError):
+            L.claude_output(json.dumps({**self.OK, 'is_error': True, 'subtype': 'error_during_execution', 'result': 'limit reached'}))
+    def test_missing_structured_output_raises(self):
+        with self.assertRaises(RuntimeError):
+            L.claude_output(json.dumps({**self.OK, 'structured_output': None}))
+    def test_non_json_raises(self):
+        with self.assertRaises(RuntimeError):
+            L.claude_output('Usage limit reached')
 
 class PromptSplit(unittest.TestCase):
     def test_stable_instructions_are_separate_so_they_can_cache(self):

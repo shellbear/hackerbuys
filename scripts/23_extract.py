@@ -2,6 +2,7 @@
 """Process the queue one batch at a time, saving each finished batch. Stop at any time; rerunning continues where it left off, with any adapter.
   23_extract.py --adapter codex --model gpt-6-luna --workers 8 --max-credits 50
   23_extract.py --adapter anthropic --model claude-haiku-5-5 --budget-usd 20
+  23_extract.py --adapter claude --model claude-haiku-5-5 --effort low --workers 4 --min-year 2022 --max-year 2022   (Claude Code CLI, on your subscription)
 Defaults (50 comments per batch, medium effort) come from the sweep in analysis/eval; see README.
 Before each Codex batch the account is re-read, and the run stops on any rule in extract_lib.stop_reason."""
 import argparse, concurrent.futures as cf, json, os, queue, subprocess, sys, tempfile, threading, time
@@ -12,13 +13,14 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--queue", default="data/extract/queue.parquet")
 ap.add_argument("--out", default="extract/out", help="result folder; also the record of what is done")
 ap.add_argument("--also-done", action="append", default=[], help="other result folders whose comments should be skipped")
-ap.add_argument("--adapter", choices=["codex", "anthropic"], required=True)
+ap.add_argument("--adapter", choices=["codex", "anthropic", "claude"], required=True)
 ap.add_argument("--model", required=True)
 ap.add_argument("--batch-size", type=int, default=50)
 ap.add_argument("--effort", default="medium")
 ap.add_argument("--workers", type=int, default=1)
 ap.add_argument("--max-batches", type=int)
 ap.add_argument("--min-year", type=int, help="process only this year and newer")
+ap.add_argument("--max-year", type=int, help="process only this year and older")
 ap.add_argument("--floor", type=float, default=100, help="codex: stop below this credit balance")
 ap.add_argument("--max-credits", type=float, help="codex: stop after this many credits in this run")
 ap.add_argument("--budget-usd", type=float, help="anthropic: stop after this many dollars in this run")
@@ -88,6 +90,19 @@ def run_anthropic(rows):
     return next(b.text for b in m.content if b.type == "text"), usage, cost
 
 
+def run_claude(rows):
+    """Uses the logged-in Claude Code subscription, so a batch costs no credits or dollars; a usage limit fails the batch and three in a row stop the run."""
+    if a.model != "claude-haiku-5-5":
+        sys.exit("only claude-haiku-5-5 is configured: other Claude models need different thinking and refusal settings")
+    with tempfile.TemporaryDirectory() as work:
+        r = subprocess.run(L.claude_command(a.model, a.effort, L.SCHEMA, INSTRUCTIONS_FILE), input=L.payload(rows), cwd=work,
+                           capture_output=True, text=True, timeout=a.timeout)
+    if r.returncode != 0 and not r.stdout.strip():
+        raise RuntimeError(f"claude exit {r.returncode}: {r.stderr[-300:]}")
+    text, usage = L.claude_output(r.stdout)
+    return text, usage, 0.0
+
+
 # The same files for every batch give each run an identical prefix, which is what the prompt cache needs.
 _shared = tempfile.mkdtemp(prefix="hb-extract-")
 SCHEMA_FILE, INSTRUCTIONS_FILE = os.path.join(_shared, "schema.json"), os.path.join(_shared, "instructions.md")
@@ -95,7 +110,7 @@ with open(SCHEMA_FILE, "w") as f:
     json.dump(L.SCHEMA, f)
 with open(INSTRUCTIONS_FILE, "w") as f:
     f.write(L.INSTRUCTIONS)
-RUN = run_codex if a.adapter == "codex" else run_anthropic
+RUN = {"codex": run_codex, "anthropic": run_anthropic, "claude": run_claude}[a.adapter]
 done = L.load_done(a.out)
 for d in a.also_done:
     done |= L.load_done(d)
@@ -172,7 +187,7 @@ def work(rows):
 os.makedirs(a.out, exist_ok=True)
 pending = set()
 with cf.ThreadPoolExecutor(a.workers) as ex:
-    for batch in L.batches(L.read_queue(a.queue, min_year=a.min_year), done, a.batch_size):
+    for batch in L.batches(L.read_queue(a.queue, min_year=a.min_year, max_year=a.max_year), done, a.batch_size):
         while len(pending) >= a.workers:
             finished, pending = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
             for f in finished:

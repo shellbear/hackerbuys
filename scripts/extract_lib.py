@@ -76,6 +76,28 @@ def codex_command(model, effort, work, schema, result, instructions):
                   "--output-schema", schema, "-o", result, "--json", "-"]
 
 
+def claude_command(model, effort, schema, instructions):
+    """Tool-free Claude Code run on the logged-in subscription. No settings, MCP servers, skills or saved session, so comment text cannot trigger anything
+    and every batch shares the same cacheable prefix. Run it from an empty directory."""
+    return ["claude", "-p", "--model", model, "--effort", effort, "--system-prompt-file", instructions, "--tools", "", "--json-schema", json.dumps(schema),
+            "--output-format", "json", "--no-session-persistence", "--strict-mcp-config", "--setting-sources", "", "--disable-slash-commands"]
+
+
+def claude_output(stdout):
+    """Return (result JSON text, usage) from `claude -p --output-format json`. Raises RuntimeError on errors such as reaching a usage limit."""
+    try:
+        d = json.loads(stdout)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"claude output is not JSON: {stdout[-300:]}") from e
+    if d.get("is_error") or d.get("subtype") != "success" or d.get("structured_output") is None:
+        raise RuntimeError(f"claude {d.get('subtype')} {d.get('api_error_status')}: {str(d.get('result'))[:300]}")
+    u = d.get("usage") or {}
+    usage = {"input_tokens": u.get("input_tokens", 0) + u.get("cache_creation_input_tokens", 0) + u.get("cache_read_input_tokens", 0),
+             "cached_input_tokens": u.get("cache_read_input_tokens", 0), "output_tokens": u.get("output_tokens", 0),
+             "reasoning_output_tokens": (u.get("output_tokens_details") or {}).get("thinking_tokens", 0)}
+    return json.dumps(d["structured_output"]), usage
+
+
 _NO_NAME = {"", "unknown", "n/a", "na", "none", "generic", "various", "unspecified", "unbranded"}
 
 
@@ -256,12 +278,13 @@ def flatten(sources, text_by_id):
     return rows, seen
 
 
-def read_queue(path, fetch=5000, min_year=None):
+def read_queue(path, fetch=5000, min_year=None, max_year=None):
     """Yield queue rows in order. Uses its own connection: another query on a shared one would silently end this read."""
     import duckdb
     con = duckdb.connect()
     try:
-        where = f"where y>={int(min_year)}" if min_year else ""
+        conds = ([f"y>={int(min_year)}"] if min_year else []) + ([f"y<={int(max_year)}"] if max_year else [])
+        where = "where " + " and ".join(conds) if conds else ""
         cur = con.execute(f"""select id,y,thread,parent,"text" from read_parquet('{path}') {where} order by seq""")
         while chunk := cur.fetchmany(fetch):
             for i, y, thread, parent, text in chunk:
