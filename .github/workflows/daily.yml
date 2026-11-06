@@ -44,16 +44,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # failed.log is also appended to by local runs, so it stays out of these commits to keep the rebase clean.
           git add corpus/daily extract/out ':!extract/out/failed.log'
-          git diff --cached --quiet || git commit -q -m "Add Hacker News comments through $(ls corpus/daily | tail -1 | cut -c1-10)"
+          if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
+          git commit -q -m "Daily update $(ls corpus/daily | tail -1 | cut -c1-10)"
           git checkout -q -- extract/out/failed.log 2>/dev/null || true
-          # The data commit only adds files, so it rebases cleanly. The site is rebuilt after each rebase rather than merged.
+          # The data only adds files, so it rebases cleanly. The site is rebuilt after each rebase and folded into the same commit.
           for attempt in 1 2 3; do
             git pull -q --rebase origin main
             uv run python scripts/14_build_site.py
             git add site
-            built=0
-            git diff --cached --quiet || { git commit -q -m "Rebuild the site with the new comments"; built=1; }
+            git commit -q --amend --no-edit
             git push -q origin HEAD:main && exit 0
-            if [ "$built" = 1 ]; then git reset -q --hard HEAD~1; else git reset -q --hard HEAD; fi
+            git reset -q --hard "HEAD@{1}" # back to the data-only commit, then retry on the newer main
           done
           exit 1
