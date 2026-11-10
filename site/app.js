@@ -12,15 +12,15 @@ const scored=(view,cat,tag)=>{let r=DB.products.filter(p=>!p.bo&&!p.pk&&!p.mx&&(
  if(view==='long')return r.filter(p=>p.lh>=1).sort((a,b)=>b.lh-a.lh||(b.maxt||0)-(a.maxt||0));
  return r.filter(p=>p.own>=MIN).sort((a,b)=>b.w-a.w||b.own-a.own)};
 function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MIN&&!p.bo&&!p.pk&&!p.mx);
- const tagLink=([k,n])=>el('a',{href:`/t/${slug(k)}`,'aria-current':curTag===k?'page':null},TAGS[k][0],el('span',{},String(n)));
+ const tagLink=([k,n])=>el('a',{href:`/t/${slug(k)}`,'aria-current':curTag===k?'page':null},TAGS[k][0],' ',el('span',{},String(n)));
  const tags=Object.keys(TAGS).map(k=>[k,live.filter(p=>p.tags.includes(k)).length]).filter(x=>x[1]>0);
- c.replaceChildren(el('a',{href:'/','aria-current':cur||curTag?null:'page'},'All categories',el('span',{},String(live.length))),
- ...Object.entries(CATS).map(([k,v])=>[k,v,live.filter(p=>p.c===k).length]).filter(x=>x[2]>0).sort((a,b)=>b[2]-a[2]).map(([k,v,n])=>el('a',{href:`/c/${slug(k)}`,'aria-current':cur===k?'page':null},v,el('span',{},String(n)))),
+ c.replaceChildren(el('a',{href:'/','aria-current':cur||curTag?null:'page'},'All categories ',el('span',{},String(live.length))),
+ ...Object.entries(CATS).map(([k,v])=>[k,v,live.filter(p=>p.c===k).length]).filter(x=>x[2]>0).sort((a,b)=>b[2]-a[2]).map(([k,v,n])=>el('a',{href:`/c/${slug(k)}`,'aria-current':cur===k?'page':null},v,' ',el('span',{},String(n)))),
  el('p',{class:'navh'},'Verdict tags'),...tags.filter(x=>QUAL.includes(x[0])).map(tagLink),el('p',{class:'navh'},'Smaller groups'),...tags.filter(x=>!QUAL.includes(x[0])).map(tagLink))}
 function chips(tags,cur){return tags&&tags.length?el('span',{class:'chips'},tags.filter(t=>t!==cur&&TAGS[t]).map(t=>el('a',{href:`/t/${slug(t)}`,title:TAGS[t][1]},TAGS[t][0]))):null}
 const PAGE=100,VERDICT_TIP='Sorts by how confidently positive owners are, adjusted for how many gave a verdict. Reverse it to see the most disliked.',HAPPY_TIP='Positive verdicts as a share of positive and negative. Neutral verdicts are not counted.';let SORT=null,SHOW=PAGE;
 function fewSection(cat,n){const few=TableSort.fewOwners(DB.products,cat,scored('loved',cat).length);if(!few.length)return null;
- return el('div',{},el('h2',{id:'few'},'Few owners so far'),el('ul',{class:'moves'},few.map(p=>el('li',{},el('a',{href:`/p/${p.k}`},p.n),el('span',{},String(p.own))))))}
+ return el('div',{},el('h2',{id:'few'},'Few owners so far'),el('ul',{class:'moves'},few.map(p=>el('li',{},el('a',{href:`/p/${p.k}`},p.n),' ',el('span',{},String(p.own))))))}
 function summaryLine(cat){const s=TableSort.categorySummary(scored('loved',cat));if(!s)return null;
  const links=ps=>ps.flatMap((p,i)=>[i?', ':null,el('a',{href:`/p/${p.k}`},p.n)]);
  return el('p',{class:'note',id:'summary'},'Most loved by owners: ',...links(s.loved),'. Most owned: ',...links(s.owned),'.')}
@@ -39,14 +39,15 @@ function list(cat,view='loved',tag,keep){if(!keep){SORT=null;SHOW=PAGE}nav(cat,t
   return el('tr',{},el('td',{class:'nm'},el('a',{href:`/p/${p.k}`},p.n),cat?null:el('small',{},CATS[p.c]||p.c),chips(p.tags,tag)),el('td',{class:'ty'},tally(...P,60)),
   el('td',{},String(view==='long'?p.lh:view==='recent'?p.rown:p.own)),view==='long'?el('td',{},p.maxt?`${p.maxt} yrs`:'–'):el('td',{class:'hide-s'},tot>=3?`${Math.round(100*P[0]/tot)}%`:'–'),el('td',{class:'hide-s'},TableSort.monthLabel(p)))}))):el('p',{class:'empty'},'No products have enough owners here yet. Try another ranking or category.'),
  cat?fewSection(cat,ranked.length):null,
- all.length>r.length?el('p',{class:'more'},el('button',{type:'button',onclick(){SHOW=all.length;const y=window.scrollY;list(cat,view,tag,true);window.scrollTo(0,y)}},`Show all ${all.length.toLocaleString()} products`)):null].filter(Boolean));
+ all.length>r.length?el('p',{class:'more'},el('button',{type:'button',onclick(){SHOW=all.length;const y=window.scrollY;list(cat,view,tag,true);window.scrollTo(0,y)}},`Show all ${all.length.toLocaleString()} products`)):null,
+ datesLine('Comments through',DB.sample.through,DB.sample.upd&&DB.sample.upd[base])].filter(Boolean));
  if(!keep)window.scrollTo(0,0)}
 function mark(terms,txt){const b=el('blockquote',{});const w=[...new Set(terms.map(x=>(x||'').trim()).filter(x=>x.length>1))].sort((x,y)=>y.length-x.length).map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+'));if(!w.length){b.textContent=txt;return b}
  const rx=new RegExp(`\\b(?:${w.join('|')})s?\\b`,'ig');let i=0,m;while((m=rx.exec(txt))){b.append(txt.slice(i,m.index),el('mark',{},m[0]));i=m.index+m[0].length}b.append(txt.slice(i));return b}
 function comment(c,name){const cl=c.s==='negative'?'n':c.s==='neutral'?'':'p',lab={recommend:'Recommends it',positive:'Likes it',neutral:'Neutral',negative:'Doesn’t like it'}[c.s];
  const q=mark([name,c.m],c.t);if(c.t.length>460)q.classList.add('clip');
  const more=c.t.length>460?el('button',{type:'button','aria-expanded':'false',onclick(e){const o=q.classList.toggle('clip');e.target.textContent=o?'Show full comment':'Show less';e.target.setAttribute('aria-expanded',String(!o))}},'Show full comment'):null;
- return el('article',{class:`c ${cl}`},el('header',{},el('strong',{},lab),c.ten!=null?el('span',{class:'yrs'},`Owned ${c.ten} ${c.ten===1?'year':'years'}`):null,c.sg?el('span',{},'Still going'):null,!c.fh?el('span',{},'Doesn’t say they own it'):null,c.m?el('span',{},c.m):null,c.g&&c.g!==c.m?el('span',{},c.g):null,c.sf?el('span',{},`Switched from ${c.sf}`):null),q,
+ return el('article',{class:`c ${cl}`},el('header',{},el('strong',{},lab),c.ten?el('span',{class:'yrs'},`Owned ${TableSort.tenureLabel(c.ten)}`):null,c.sg?el('span',{},'Still going'):null,!c.fh?el('span',{},'Doesn’t say they own it'):null,c.m?el('span',{},c.m):null,c.g&&c.g!==c.m?el('span',{},c.g):null,c.sf?el('span',{},`Switched from ${c.sf}`):null),q,
  el('footer',{},more,el('a',{href:`https://news.ycombinator.com/item?id=${c.id}`,rel:'noopener'},`${c.by}, ${c.d}`),c.th&&c.root?el('a',{href:`https://news.ycombinator.com/item?id=${c.root}`,rel:'noopener'},`in “${c.th}”`):null))}
 function reasonsLine(p){const words=l=>l.slice(0,2).map(x=>x.replace(/_/g,' ')).join(' and '),bits=[];if(p.pr&&p.pr.length)bits.push(`Praised for ${words(p.pr)}`);const shown=(p.pr||[]).slice(0,2),bad=(p.co||[]).filter(x=>!shown.includes(x));if(bad.length)bits.push(`${bits.length?'criticized':'Criticized'} for ${words(bad)}`);return bits.length?el('p',{class:'note'},bits.join('; ')+'.'):null}
 function product(p){const m=$('#main');let f='all',sort='ten';const wrap=el('div',{});
@@ -58,13 +59,15 @@ function product(p){const m=$('#main');let f='all',sort='ten';const wrap=el('div
  const fb=opt.map(([key,l])=>[key,el('button',{type:'button',onclick(){f=key;draw()}},l)]);
  const sel=el('select',{'aria-label':'Sort comments',onchange(e){sort=e.target.value;draw()}},el('option',{value:'ten'},'Longest owned first'),el('option',{value:'new'},'Newest first'),el('option',{value:'old'},'Oldest first'));
  m.replaceChildren(...[el('p',{class:'crumb'},el('a',{href:`/c/${slug(p.c)}`},CATS[p.c]||p.c),p.pk?' · ':null,p.pk?el('a',{href:`/p/${p.pk}`},p.pn||'All models'):null),el('h1',{},p.n),
- p.tags.length?el('ul',{class:'whys'},p.tags.filter(t=>TAGS[t]).map(t=>el('li',{},el('a',{href:`/t/${slug(t)}`},TAGS[t][0]),p.why[t]?el('span',{},p.why[t]):null))):null,el('div',{class:'big'},tally(p.pos,p.neu,p.neg,120)),
- el('div',{class:'verdict'},el('div',{},el('b',{},String(p.own)),'owners with an opinion'),el('div',{},el('b',{},p.pos+p.neg>=3?`${Math.round(100*p.pos/(p.pos+p.neg))}%`:'–'),'of verdicts positive'),el('div',{},el('b',{},`${p.rpos}/${p.rneg}`),'positive/negative since 2024'),p.maxt?el('div',{},el('b',{},`${p.maxt} yrs`),'longest happy owner'):null,el('div',{},el('b',{},String(p.lh)),'happy after 3+ years')),
+ p.tags.length?el('ul',{class:'whys'},p.tags.filter(t=>TAGS[t]).map(t=>el('li',{},el('a',{href:`/t/${slug(t)}`},TAGS[t][0]),' ',p.why[t]?el('span',{},p.why[t]):null))):null,el('div',{class:'big'},tally(p.pos,p.neu,p.neg,120)),
+ el('div',{class:'verdict'},el('div',{},el('b',{},String(p.own)),' owners with an opinion'),el('div',{},el('b',{},p.pos+p.neg>=3?`${Math.round(100*p.pos/(p.pos+p.neg))}%`:'–'),' of verdicts positive'),el('div',{},el('b',{},`${p.rpos}/${p.rneg}`),' positive/negative since 2024'),p.maxt?el('div',{},el('b',{},`${p.maxt} yrs`),' longest happy owner'):null,el('div',{},el('b',{},String(p.lh)),' happy after 3+ years')),
  p.gens.length?[el('h2',{},'By generation'),el('table',{},el('thead',{},el('tr',{},el('th',{},'Generation'),el('th',{},'Verdict'),el('th',{},'Owners'))),el('tbody',{},p.gens.map(([g,n,a,b])=>el('tr',{},el('td',{class:'nm'},g),el('td',{class:'ty'},tally(a,n-a-b,b,60)),el('td',{},String(n))))))]:null,
- reasonsLine(p),
- p.models&&p.models.length?[el('h2',{},'Models'),el('ul',{class:'moves'},p.models.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),el('span',{},String(c)))))]:null,
- p.to.length||p.fr.length?[el('h2',{},'Where people moved'),el('div',{class:'two'},p.to.length?el('div',{},el('p',{class:'note'},'Left this for'),el('ul',{class:'moves'},p.to.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),el('span',{},String(c)))))):null,p.fr.length?el('div',{},el('p',{class:'note'},'Came here from'),el('ul',{class:'moves'},p.fr.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),el('span',{},String(c)))))):null)]:null,
+ reasonsLine(p),datesLine('Newest comment',p.lt,p.upd),
+ p.models&&p.models.length?[el('h2',{},'Models'),el('ul',{class:'moves'},p.models.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),' ',el('span',{},String(c)))))]:null,
+ p.to.length||p.fr.length?[el('h2',{},'Where people moved'),el('div',{class:'two'},p.to.length?el('div',{},el('p',{class:'note'},'Left this for'),el('ul',{class:'moves'},p.to.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),' ',el('span',{},String(c)))))):null,p.fr.length?el('div',{},el('p',{class:'note'},'Came here from'),el('ul',{class:'moves'},p.fr.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),' ',el('span',{},String(c)))))):null)]:null,
  el('h2',{},'What people wrote'),el('div',{class:'filters'},fb.map(x=>x[1]),sel),wrap].flat().filter(Boolean));draw()}
+// Matches the dates line the build writes into each page.
+function datesLine(lead,day,upd){const t=d=>el('time',{datetime:d},TableSort.dayLabel(d)),k=[];if(day)k.push(`${lead} `,t(day));if(upd)k.push(k.length?' · updated ':'Updated ',t(upd));return k.length?el('p',{class:'note',id:'dates'},k):null}
 // Old links used #/ routes; send them to the real URL.
 function oldHash(){const h=location.hash;if(!h.startsWith('#/'))return null;const s=h.slice(2).split('/').filter(Boolean);
  if(s[0]==='p'&&s[1])return`/p/${s[1]}`;if((s[0]==='c'||s[0]==='t')&&s[1])return`/${s[0]}/${slug(s[1])}${s[2]?`?view=${s[2]}`:''}`;if(s[0]==='v'&&s[1])return`/?view=${s[1]}`;return'/'}

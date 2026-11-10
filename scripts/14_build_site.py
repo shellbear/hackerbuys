@@ -1,7 +1,7 @@
 """Build static site JSON from the run41k sample plus the extraction pipeline's results in extract/out.
 Comment text comes from corpus/ (see corpus.py). When the full local queue exists, corpus/archive is refreshed from it first.
 Counts cover scanned comments, not all of HN."""
-import json,glob,re,math,collections,os,shutil,sys
+import json,glob,re,math,collections,os,shutil,sys,hashlib
 sys.path.insert(0,'scripts')
 import duckdb
 import extract_lib as L
@@ -11,6 +11,8 @@ import datetime as dt
 MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
 MIN_MODEL_OWNERS,MAX_MODELS_LISTED=3,20
 QUEUE,OUT='data/extract/queue.parquet','extract/out'
+# Each page's content hash and the day it last changed. Committed with the site, and kept out of the deploy by site/.assetsignore.
+LASTMOD='site/.lastmod.json'
 RECALL_QUEUE,RECALL_OUT='data/extract/recall_queue.parquet','extract/recall'
 R='analysis/run41k'
 text={};meta={}
@@ -257,7 +259,7 @@ def make(k,v,name=None,parent=None,parent_name=None):
         cs.append(dict(id=x['id'],by=x['by'],d=x['time'],s=x['stance'],fh=x['first_hand'],ten=x['tenure_years'],sg=x['still_going'],m=x.get('model') or '',g=gen_label(x),sf=x.get('switched_from') or '',t=L.trim_text(src['text'],MAX_TEXT),th=x['title'] or '',root=x['root']))
     cs=L.pick_comments(cs,MAX_COMMENTS)
     aspect=lambda f:[t for t,_ in collections.Counter(w for x in v if x['first_hand'] for w in (x.get(f) or [])).most_common(3)]
-    page=dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why,pr=aspect('pros'),co=aspect('cons'))
+    page=dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why,pr=aspect('pros'),co=aspect('cons'),lt=v[-1]['time'][:10])
     pages.append(page)
     return page
 parents={}
@@ -283,7 +285,6 @@ for (_,mk),xs in sorted(groups.items(),key=lambda kv:-len(kv[1])):
     page.setdefault('models',[]).append([kid['n'],kid['k'],kid['own']])
 for page in parents.values():
     if page.get('models'): page['models']=sorted(page['models'],key=lambda r:-r[2])[:MAX_MODELS_LISTED]
-json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL))),open('site/data/index.json','w'),ensure_ascii=False)
 # Real HTML pages: the content is in the file, and app.js adds sorting and filters on top.
 def write(path,body):
     os.makedirs(os.path.dirname(path),exist_ok=True)
@@ -293,7 +294,16 @@ span=None if not FULL else str(min(FULL)) if len(FULL)==1 else f"{min(FULL)} to 
 # Rounded down so a daily update does not rewrite every page footer.
 cover=f"Based on more than {len(meta)//10000*10000:,} comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
 cats,tags=SR.read_meta('site/app.js')
-site=SR.Site(cats,tags,cover,index)
+TODAY=dt.datetime.now(dt.timezone.utc).date().isoformat()
+THROUGH=max(x['time'][:10] for x in meta.values())
+old=json.load(open(LASTMOD)) if os.path.exists(LASTMOD) else {}
+changed={}
+def stamp(path,content,seed):
+    """A page keeps its date until its text changes, so markup and style changes don't count. A page seen for the first time starts from its newest comment."""
+    h=hashlib.sha1(re.sub(r'<[^>]*>|\s+','',content).encode()).hexdigest()[:16];prev=old.get(path)
+    day=prev[1] if prev and prev[0]==h else TODAY if prev or not seed else min(seed,TODAY)
+    changed[path]=[h,day];return day
+site=SR.Site(cats,tags,cover,index,stamp=stamp,through=THROUGH)
 ranked=sorted((p for p in index if p['own']>=3 and not p['bo'] and not p.get('pk') and not p.get('mx')),key=lambda p:(-p['w'],-p['own']))
 paths=['/']
 write('site/index.html',site.list_page(ranked))
@@ -307,7 +317,11 @@ for k in tags:
     r=[p for p in ranked if k in p['tags']]
     if r: write(f'site/t/{SR.slug(k)}.html',site.list_page(r,tag=k));paths.append(SR.tag_path(k))
 for p in pages: write(f"site/p/{p['k']}.html",site.product_page(p))
-write('site/sitemap.xml',SR.sitemap(paths,index,dt.date.today().isoformat()))
+days={u:d for u,(_,d) in changed.items()}
+json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL),through=THROUGH,upd={u:d for u,d in days.items() if not u.startswith('/p/')})),open('site/data/index.json','w'),ensure_ascii=False)
+write(LASTMOD,json.dumps(dict(sorted(changed.items())),separators=(',',':')).replace('],','],\n')+'\n')
+write('site/.assetsignore','.lastmod.json\n')
+write('site/sitemap.xml',SR.sitemap(paths,index,TODAY,days))
 write('site/robots.txt',SR.robots())
 write('site/llms.txt',SR.llms_txt({k:v for k,v in cats.items() if any(p['c']==k for p in ranked)},len(ranked)))
 print('pages',len(pages),'categories and tags',len(paths)-1,'in sitemap',len(paths)+sum(SR.indexable(p) for p in index))

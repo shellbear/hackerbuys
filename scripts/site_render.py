@@ -117,6 +117,26 @@ def month_label(ym):
     return f"{_MONTHS[int(month) - 1]} {year}"
 
 
+def day_label(ymd):
+    year, month, day = ymd[:10].split("-")
+    return f"{int(day)} {_MONTHS[int(month) - 1]} {year}"
+
+
+def tenure_label(years):
+    """How long someone owned it, in the unit people use: 3 weeks, 5 months, 2.5 years."""
+    if years >= 1:
+        return f"{years:g} {'year' if years == 1 else 'years'}"
+    months = round(years * 12)
+    if months >= 2:
+        return f"{months} months"
+    weeks = max(1, round(years * 52))
+    return f"{weeks} {'week' if weeks == 1 else 'weeks'}"
+
+
+def _time(ymd):
+    return f'<time datetime="{e(ymd[:10])}">{day_label(ymd)}</time>'
+
+
 _LIGHT_TYPE = re.compile(r"\b(lamps?|bulbs?|light bars?|monitor lights?|desk lights?|smart lights?|smart lighting|lighting|led strips?|monitor arms?|desk mats?)\b", re.I)
 _NOT_DESK_LIGHT = re.compile(r"\b(bike|bicycle|flashlight|headlamp|car|vehicle|torch)\b", re.I)
 _LIGHT_NAME = re.compile(r"\b(philips hue|hue|lifx|nanoleaf|tradfri|screenbar|ergotron|monitor arm)\b", re.I)
@@ -307,9 +327,10 @@ def robots():
     return f"User-agent: *\nAllow: /\n\nSitemap: {ORIGIN}/sitemap.xml\n"
 
 
-def sitemap(paths, products, date):
+def sitemap(paths, products, date, changed=None):
+    """lastmod is the day a page last said something different, from changed, so crawlers can trust it; date is the fallback."""
     urls = list(paths) + [f"/p/{p['k']}" for p in products if indexable(p)]
-    body = "".join(f"<url><loc>{e(ORIGIN + u)}</loc><lastmod>{date}</lastmod></url>" for u in urls)
+    body = "".join(f"<url><loc>{e(ORIGIN + u)}</loc><lastmod>{(changed or {}).get(u, date)}</lastmod></url>" for u in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>\n'
 
 
@@ -335,13 +356,15 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 
 
 class Site:
-    def __init__(self, cats, tags, coverage, products=()):
+    def __init__(self, cats, tags, coverage, products=(), stamp=None, through=None):
+        """stamp(path, content, seed) returns the day a page's content last changed; through is the newest comment scanned."""
         self.cats, self.tags, self.coverage = cats, tags, coverage
+        self.stamp, self.through = stamp, through
         self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("pk") and not p.get("mx")]
 
     def _nav(self, cat=None, tag=None):
         count = lambda key: sum(p["c"] == key for p in self.live)
-        link = lambda href, label, n, cur: f'<a href="{e(href)}"{" aria-current=\"page\"" if cur else ""}>{e(label)}<span>{n}</span></a>'
+        link = lambda href, label, n, cur: f'<a href="{e(href)}"{" aria-current=\"page\"" if cur else ""}>{e(label)} <span>{n}</span></a>'
         out = [link("/", "All categories", len(self.live), not cat and not tag)]
         for k, v in sorted(((k, v) for k, v in self.cats.items() if count(k)), key=lambda kv: -count(kv[0])):
             out.append(link(cat_path(k), v, count(k), k == cat))
@@ -365,10 +388,25 @@ class Site:
 <link href="{FONTS}" rel="stylesheet">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="stylesheet" href="/style.css">{extra}</head>
 <body><header class="top"><a class="logo" href="/">HackerBuys</a><p class="tag">{e(TAGLINE)}</p></header>
-<div class="shell"><nav id="cats" aria-label="Categories">{self._nav(cat, tag)}</nav><main id="main" tabindex="-1">{main}</main></div>
+<div class="shell"><main id="main" tabindex="-1">{main}</main><nav id="cats" aria-label="Categories">{self._nav(cat, tag)}</nav></div>
 <footer><p id="foot">{e(self.coverage)}</p><p>Comments from <a href="https://news.ycombinator.com">Hacker News</a> via <a href="https://huggingface.co/datasets/open-index/hacker-news">open-index/hacker-news</a> (ODC-BY). Not affiliated with Y Combinator.</p><p>Made by <a href="https://shellbear.me">shellbear</a> · <a href="https://github.com/shellbear/hackerbuys">Source on GitHub</a></p></footer>
 <script src="/sort.js"></script><script src="/app.js"></script></body></html>
 """
+
+    def _dates(self, path, core, seed, lead, kind):
+        """The visible dates line and its structured data. The page is stamped without this line, so its updated date
+        only moves when what the page says changes, not when the newest scanned comment does."""
+        updated = self.stamp(path, core, seed) if self.stamp else None
+        parts = [lead] if lead else []
+        if updated:
+            parts.append(f"{'updated' if parts else 'Updated'} {_time(updated)}")
+        if not parts:
+            return "", "", None
+        line = f'<p class="note" id="dates">{" · ".join(parts)}</p>'
+        page = {"@context": "https://schema.org", "@type": kind, "url": ORIGIN + path}
+        if updated:
+            page["dateModified"] = updated
+        return line, f'<script type="application/ld+json">{embed_json(page)}</script>' if updated else "", updated
 
     def _rows(self, rows, show_cat):
         out = []
@@ -408,19 +446,21 @@ class Site:
             items = [{"@type": "ListItem", "position": i + 1, "url": f"{ORIGIN}/p/{p['k']}", "name": p["n"]} for i, p in enumerate(rows[:ITEM_LIST_SIZE])]
             extra = f'<script type="application/ld+json">{embed_json({"@context": "https://schema.org", "@type": "ItemList", "name": heading, "itemListElement": items})}</script>'
         main = f'<h1>{e(heading)}</h1>{lede}{summary}<div class="views">{tabs}</div><p class="note">{e(NOTE)}</p>{table}{self._few(few)}'
-        return self._page(title, desc, base, main, cat=cat, tag=tag, extra=extra)
+        lead = f"Comments through {_time(self.through)}" if self.through else ""
+        dates, page, _ = self._dates(base, main, self.through, lead, "CollectionPage")
+        return self._page(title, desc, base, main + dates, cat=cat, tag=tag, extra=extra + page)
 
     def _few(self, few):
         if not few:
             return ""
-        items = "".join(f'<li><a href="/p/{e(p["k"])}">{e(p["n"])}</a><span>{p["own"]}</span></li>' for p in few)
+        items = "".join(f'<li><a href="/p/{e(p["k"])}">{e(p["n"])}</a> <span>{p["own"]}</span></li>' for p in few)
         return f'<h2 id="few">Few owners so far</h2><ul class="moves">{items}</ul>'
 
     def _comment(self, c):
         cl = {"negative": "n", "neutral": ""}.get(c["s"], "p")
         bits = [f"<strong>{e(STANCE.get(c['s'], c['s']))}</strong>"]
-        if c.get("ten") is not None:
-            bits.append(f'<span class="yrs">Owned {e(c["ten"])} {"year" if c["ten"] == 1 else "years"}</span>')
+        if c.get("ten"):
+            bits.append(f'<span class="yrs">Owned {tenure_label(c["ten"])}</span>')
         if c.get("sg"):
             bits.append("<span>Still going</span>")
         if not c.get("fh"):
@@ -433,28 +473,31 @@ class Site:
         owners = "1 Hacker News owner thinks" if p["own"] == 1 else f"{p['own']} Hacker News owners think"
         title = f"{p['n']}: what {owners} | HackerBuys"
         desc = _description(p)
-        whys = "".join(f'<li><a href="{e(tag_path(t))}">{e(self.tags[t][0])}</a><span>{e(p["why"].get(t, ""))}</span></li>' for t in p["tags"] if t in self.tags)
+        whys = "".join(f'<li><a href="{e(tag_path(t))}">{e(self.tags[t][0])}</a> <span>{e(p["why"].get(t, ""))}</span></li>' for t in p["tags"] if t in self.tags)
         whys = f'<ul class="whys">{whys}</ul>' if whys else ""
         stats = [(p["own"], "owners with an opinion"), (happy_pct(p), "of verdicts positive"), (f"{p['rpos']}/{p['rneg']}", "positive/negative since 2024")]
         if p["maxt"]:
             stats.append((f"{p['maxt']} yrs", "longest happy owner"))
         stats.append((p["lh"], "happy after 3+ years"))
-        stats = "".join(f"<div><b>{e(a)}</b>{e(b)}</div>" for a, b in stats)
-        moves = lambda rows: "".join(f'<li><a href="/p/{e(r[1])}">{e(r[0])}</a><span>{e(r[2])}</span></li>' for r in rows)
+        stats = "".join(f"<div><b>{e(a)}</b> {e(b)}</div>" for a, b in stats)
+        moves = lambda rows: "".join(f'<li><a href="/p/{e(r[1])}">{e(r[0])}</a> <span>{e(r[2])}</span></li>' for r in rows)
         to = f'<div><p class="note">Left this for</p><ul class="moves">{moves(p["to"])}</ul></div>' if p["to"] else ""
         fr = f'<div><p class="note">Came here from</p><ul class="moves">{moves(p["fr"])}</ul></div>' if p["fr"] else ""
         moved = f'<h2>Where people moved</h2><div class="two">{to}{fr}</div>' if to or fr else ""
         reasons = f'<p class="note">{e(_reasons(p))}</p>' if _reasons(p) else ""
         parent = f' · <a href="/p/{e(p["pk"])}">{e(p.get("pn") or "All models")}</a>' if p.get("pk") else ""
-        models = "".join(f'<li><a href="/p/{e(k)}">{e(n)}</a><span>{e(c)}</span></li>' for n, k, c in p.get("models") or [])
+        models = "".join(f'<li><a href="/p/{e(k)}">{e(n)}</a> <span>{e(c)}</span></li>' for n, k, c in p.get("models") or [])
         models = f'<h2>Models</h2><ul class="moves">{models}</ul>' if models else ""
-        main = (f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{reasons}{models}{moved}'
-                f'<h2>What people wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>')
+        top = f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{reasons}'
+        rest = f'{models}{moved}<h2>What people wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>'
+        path = f"/p/{p['k']}"
+        dates, page, updated = self._dates(path, top + rest, p.get("lt"), f"Newest comment {_time(p['lt'])}" if p.get("lt") else "", "WebPage")
         crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": cat, "item": ORIGIN + cat_path(p["c"])},
             {"@type": "ListItem", "position": 2, "name": p["n"], "item": f"{ORIGIN}/p/{p['k']}"}]}
-        extra = f'<script type="application/ld+json">{embed_json(crumbs)}</script><script type="application/json" id="product">{embed_json(p)}</script>'
-        return self._page(title, desc, f"/p/{p['k']}", main, cat=p["c"], noindex=not indexable(p), extra=extra)
+        data = dict(p, upd=updated) if updated else p
+        extra = f'<script type="application/ld+json">{embed_json(crumbs)}</script>{page}<script type="application/json" id="product">{embed_json(data)}</script>'
+        return self._page(title, desc, path, top + dates + rest, cat=p["c"], noindex=not indexable(p), extra=extra)
 
     def not_found(self):
         main = '<h1>Page not found</h1><p class="lede">That page isn’t in the catalogue. Products need at least two owners to get a page.</p><p><a href="/">Go to all categories</a></p>'

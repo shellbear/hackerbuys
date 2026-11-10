@@ -415,4 +415,57 @@ class FewOwners(unittest.TestCase):
         self.assertNotIn('Few owners so far', SITE.list_page([E], cat='keyboards', few=[]))
 
 
+class Dates(unittest.TestCase):
+    def setUp(self):
+        self.calls = {}
+        def stamp(path, content, seed):
+            self.calls[path] = content
+            return '2026-11-07'
+        self.site = R.Site(CATS, TAGS, 'Based on 10 comments.', stamp=stamp, through='2026-11-05')
+    def test_product_shows_newest_comment_and_updated_day(self):
+        h = self.site.product_page(dict(E, lt='2026-11-03'))
+        self.assertIn('Newest comment <time datetime="2026-11-03">3 Nov 2026</time> · updated <time datetime="2026-11-07">7 Nov 2026</time>', h)
+        self.assertIn('"dateModified": "2026-11-07"', h)
+        self.assertIn('"upd": "2026-11-07"', h)
+    def test_list_shows_data_cutoff_and_updated_day(self):
+        h = self.site.list_page([E], cat='keyboards')
+        self.assertIn('Comments through <time datetime="2026-11-05">5 Nov 2026</time> · updated', h)
+        self.assertIn('"@type": "CollectionPage"', h)
+    def test_stamp_does_not_see_the_dates_line(self):
+        self.site.product_page(dict(E, lt='2026-11-03'))
+        self.site.list_page([E], cat='keyboards')
+        self.assertNotIn('Newest comment', self.calls['/p/kinesis-advantage'])
+        self.assertNotIn('Comments through', self.calls['/c/keyboards'])
+        self.assertIn('Kinesis Advantage', self.calls['/p/kinesis-advantage'])
+    def test_no_stamp_means_no_dates(self):
+        h = SITE.product_page(E)
+        self.assertNotIn('id="dates"', h)
+        self.assertNotIn('dateModified', h)
+    def test_day_label(self):
+        self.assertEqual(R.day_label('2026-01-09'), '9 Jan 2026')
+    def test_sitemap_uses_each_pages_own_day(self):
+        x = R.sitemap(['/', '/c/keyboards'], [E], '2026-11-07', {'/c/keyboards': '2026-10-01', '/p/kinesis-advantage': '2026-09-02'})
+        self.assertIn('<loc>https://hn.shellbear.me/c/keyboards</loc><lastmod>2026-10-01</lastmod>', x)
+        self.assertIn('<loc>https://hn.shellbear.me/p/kinesis-advantage</loc><lastmod>2026-09-02</lastmod>', x)
+        self.assertIn('<loc>https://hn.shellbear.me/</loc><lastmod>2026-11-07</lastmod>', x)
+
+
+class Readable(unittest.TestCase):
+    def test_tenure_uses_weeks_months_or_years(self):
+        self.assertEqual([R.tenure_label(y) for y in (0.01, 0.06, 0.08, 0.17, 0.5, 1, 2.5, 25)],
+                         ['1 week', '3 weeks', '4 weeks', '2 months', '6 months', '1 year', '2.5 years', '25 years'])
+    def test_comment_shows_short_tenure_in_weeks(self):
+        h = SITE.product_page(dict(E, cs=[dict(E['cs'][0], ten=0.06)]))
+        self.assertIn('Owned 3 weeks', h)
+        self.assertNotIn('Owned 0.06', h)
+    def test_numbers_and_labels_are_separated_in_text(self):
+        h = SITE.product_page(E)
+        self.assertIn('<b>170</b> owners with an opinion', h)
+        self.assertIn('MoErgo Glove80</a> <span>', h)
+        self.assertIn('All categories <span>', h)
+    def test_main_comes_before_the_nav(self):
+        h = SITE.product_page(E)
+        self.assertLess(h.index('<main'), h.index('<nav id="cats"'))
+
+
 if __name__ == '__main__': unittest.main()

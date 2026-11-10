@@ -150,3 +150,14 @@ test('few owners lists two-owner products in thin categories only', () => {
   assert.deepEqual(fewOwners(rows, 'a', 1).map(p => p.k), ['y']);
   assert.deepEqual(fewOwners(rows, 'a', 25), []);
 });
+
+const { dayLabel } = require('../site/sort.js');
+test('day label matches the page: day, short month, year', () => {
+  assert.equal(dayLabel('2026-11-07'), '7 Nov 2026');
+  assert.equal(dayLabel('2026-01-30'), '30 Jan 2026');
+});
+
+const { tenureLabel } = require('../site/sort.js');
+test('tenure reads in weeks, months or years, like the page', () => {
+  assert.deepEqual([0.01, 0.06, 0.17, 0.5, 1, 2.5].map(tenureLabel), ['1 week', '3 weeks', '2 months', '6 months', '1 year', '2.5 years']);
+});
