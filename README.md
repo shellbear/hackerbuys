@@ -87,7 +87,16 @@ On 400 labeled comments, scored against labels from Claude Sonnet, the current s
 
 ## Run it yourself
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.12+. Raw data is about 15 GB and isn't in this repo. See [`scripts/01_funnel.py`](scripts/01_funnel.py) and [`scripts/02_enrich.py`](scripts/02_enrich.py) for the filter stage.
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.12+. Everyday tasks are in the [`Makefile`](Makefile): run `make` to list them.
+
+```bash
+make install    # uv sync
+make build      # build the site into site/, about 20 seconds
+make serve      # preview it with wrangler dev
+make test       # Python and JavaScript tests
+```
+
+Raw data is about 15 GB and isn't in this repo. See [`scripts/01_funnel.py`](scripts/01_funnel.py) and [`scripts/02_enrich.py`](scripts/02_enrich.py) for the filter stage.
 
 ```bash
 uv sync
@@ -103,13 +112,12 @@ uv sync
 .venv/bin/python scripts/23_extract.py --adapter claude --model claude-haiku-5-5 --effort low --workers 16 --min-year 2022 --max-year 2022
 .venv/bin/python scripts/26_progress.py
 
-# Build the site into site/ (this also refreshes corpus/archive from the local queue), then preview it
-.venv/bin/python scripts/14_build_site.py
-npx wrangler dev
+# Build the site (with the local queue present, this also refreshes corpus/archive), then preview it
+make build
+make serve
 
 # Test
-.venv/bin/python -m unittest tests.test_extract_lib tests.test_site_render tests.test_corpus
-node --test tests/site_sort.test.cjs
+make test
 ```
 
 The Codex adapter re-reads your balance before each batch. It stops below `--floor`, at `--max-credits`, if the balance rises, or on a spending limit.
@@ -118,7 +126,7 @@ The `claude` adapter runs Haiku through the Claude Code CLI on a logged-in subsc
 
 Pushes to `main` deploy to Cloudflare Workers through [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): it runs the tests, builds the site from the committed data in about 20 seconds, and runs `wrangler deploy`. Generated pages are not committed. It needs the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets.
 
-Each page's last-changed date lives in `state/lastmod.json`, which the deploy commits back. A page's date only moves when its text changes, so this file is the build's only memory; don't commit a copy from a local build over it.
+Each page's last-changed date lives in `state/lastmod.json`, which the deploy commits back. A page's date only moves when its text changes, so this file is the build's only memory. Local builds read it but never write it. `make verify-live` checks that the live site serves exactly what a local build produces.
 
 ### Daily updates
 

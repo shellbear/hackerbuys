@@ -350,7 +350,8 @@ for p in pages: write(f"site/p/{p['k']}.html",site.product_page(p))
 for v in versus: write(f"site/vs/{v['k']}.html",site.vs_page(v));paths.append(f"/vs/{v['k']}")
 days={u:d for u,(_,d) in changed.items()}
 write('site/data/index.json',json.dumps(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL),through=THROUGH,upd={u:d for u,d in days.items() if not u.startswith('/p/')})),ensure_ascii=False))
-write(LASTMOD,json.dumps(dict(sorted(changed.items())),separators=(',',':')).replace('],','],\n')+'\n')
+# Only the deploy records dates: a local build would otherwise date its changes to the day of a preview.
+if os.environ.get('CI'): write(LASTMOD,json.dumps(dict(sorted(changed.items())),separators=(',',':')).replace('],','],\n')+'\n')
 write('site/sitemap.xml',SR.sitemap(paths,index,TODAY,days))
 write('site/robots.txt',SR.robots())
 write('site/llms.txt',SR.llms_txt({k:v for k,v in cats.items() if any(p['c']==k for p in ranked)},len(ranked)))
