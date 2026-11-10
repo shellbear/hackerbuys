@@ -527,6 +527,14 @@ class Versus(unittest.TestCase):
         self.assertIn('<a href="/vs/hhkb-vs-kinesis-advantage">HHKB vs Kinesis Advantage</a> <span>Favors Kinesis Advantage</span>', h)
         self.assertIn('<link rel="canonical" href="https://hn.shellbear.me/vs">', h)
         self.assertNotIn('aria-current="page">All categories', h)
+    def test_praise_is_not_repeated_as_a_complaint(self):
+        v = dict(self.V, a=dict(self.V['a'], pr=['ergonomics', 'comfort'], co=['ergonomics', 'price']))
+        self.assertIn('<td>Criticized for</td><td>price</td>', SITE.vs_page(v))
+    def test_new_page_dates_from_the_newest_comment_shown(self):
+        seen = {}
+        site = R.Site(CATS, TAGS, 'x', stamp=lambda path, content, seed: seen.setdefault(path, seed))
+        site.vs_page(dict(self.V, b=dict(self.V['b'], lt='2026-11-05')))
+        self.assertEqual(seen['/vs/hhkb-vs-kinesis-advantage'], '2026-11-05')
     def test_vs_key_is_the_same_either_way(self):
         self.assertEqual(R.vs_key('b', 'a'), R.vs_key('a', 'b'))
     def test_product_page_links_its_comparisons(self):

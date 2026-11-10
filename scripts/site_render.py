@@ -597,7 +597,9 @@ class Site:
         rows = [("Owners with an opinion", lambda p: e(p["own"])), ("Positive verdicts", lambda p: e(verdicts(p))),
                 ("Positive/negative since 2024", lambda p: e(f"{p['rpos']}/{p['rneg']}")), ("Happy after 3+ years", lambda p: e(p["lh"])),
                 ("Longest happy owner", lambda p: e(f"{p['maxt']} yrs") if p.get("maxt") else "–"),
-                ("Praised for", lambda p: aspects(p.get("pr"))), ("Criticized for", lambda p: aspects(p.get("co"))),
+                ("Praised for", lambda p: aspects(p.get("pr"))),
+                # As on product pages: what's among the top praise isn't also listed as a complaint.
+                ("Criticized for", lambda p: aspects([x for x in p.get("co") or [] if x not in (p.get("pr") or [])[:2]])),
                 ("Newest comment", lambda p: _time(p["lt"]) if p.get("lt") else "–")]
         name = lambda i, p: f'<th{" class=\"won\"" if winner == i else ""}><a href="/p/{e(p["k"])}">{e(p["n"])}</a></th>'
         table = (f'<table class="vs"><thead><tr><th></th>{name(0, a)}{name(1, b)}</tr></thead><tbody>'
@@ -607,7 +609,8 @@ class Site:
         top = (f'<p class="crumb">{crumb}</p><h1>{e(a["n"])} vs {e(b["n"])}</h1><p class="lede">{e(verdict)}</p>'
                f'<ul class="facts">{"".join(f"<li>{e(x)}</li>" for x in facts)}</ul>{table}')
         rest = f'<h2>What owners wrote about both</h2><div id="comments">{"".join(self._vs_comment(c, a["n"], b["n"]) for c in v["cs"])}</div>' if v["cs"] else ""
-        newest = max((c["d"] for c in v["cs"]), default=None)
+        # The table shows each product's newest comment, so a new page dates from the newest of those and the quotes.
+        newest = max([c["d"] for c in v["cs"]] + [p["lt"] for p in (a, b) if p.get("lt")], default=None)
         # Just the updated day: the table already gives each product's newest comment.
         dates, page, _ = self._dates(path, top + rest, newest, "", "WebPage")
         crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
