@@ -15,6 +15,7 @@ function nav(cur,curTag){const c=$('#cats'),live=DB.products.filter(p=>p.own>=MI
  const tagLink=([k,n])=>el('a',{href:`/t/${slug(k)}`,'aria-current':curTag===k?'page':null},TAGS[k][0],' ',el('span',{},String(n)));
  const tags=Object.keys(TAGS).map(k=>[k,live.filter(p=>p.tags.includes(k)).length]).filter(x=>x[1]>0);
  c.replaceChildren(el('a',{href:'/','aria-current':cur||curTag?null:'page'},'All categories ',el('span',{},String(live.length))),
+ ...(DB.sample.vs?[el('a',{href:'/vs'},'Comparisons ',el('span',{},String(DB.sample.vs)))]:[]),
  ...Object.entries(CATS).map(([k,v])=>[k,v,live.filter(p=>p.c===k).length]).filter(x=>x[2]>0).sort((a,b)=>b[2]-a[2]).map(([k,v,n])=>el('a',{href:`/c/${slug(k)}`,'aria-current':cur===k?'page':null},v,' ',el('span',{},String(n)))),
  el('p',{class:'navh'},'Verdict tags'),...tags.filter(x=>QUAL.includes(x[0])).map(tagLink),el('p',{class:'navh'},'Smaller groups'),...tags.filter(x=>!QUAL.includes(x[0])).map(tagLink))}
 function chips(tags,cur){return tags&&tags.length?el('span',{class:'chips'},tags.filter(t=>t!==cur&&TAGS[t]).map(t=>el('a',{href:`/t/${slug(t)}`,title:TAGS[t][1]},TAGS[t][0]))):null}

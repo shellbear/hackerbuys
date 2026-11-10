@@ -516,6 +516,17 @@ class Versus(unittest.TestCase):
         self.assertIn('1 owner moved from the HHKB to the Kinesis Advantage, 0 the other way.', h)
         self.assertIn('Switched from the HHKB to the Kinesis Advantage', h)
         self.assertIn('<link rel="canonical" href="https://hn.shellbear.me/vs/hhkb-vs-kinesis-advantage">', h)
+    def test_nav_links_the_comparisons(self):
+        site = R.Site(CATS, TAGS, 'x', [E], comparisons=400)
+        self.assertIn('<a href="/vs">Comparisons <span>400</span></a>', site.list_page([E], cat='keyboards'))
+        self.assertIn('<a href="/vs" aria-current="page">Comparisons', site.vs_index([self.V]))
+        self.assertNotIn('Comparisons', SITE.product_page(E))
+    def test_index_lists_each_comparison_with_its_verdict(self):
+        h = R.Site(CATS, TAGS, 'x', [E], comparisons=1).vs_index([self.V])
+        self.assertIn('<h2 id="keyboards">Keyboards</h2>', h)
+        self.assertIn('<a href="/vs/hhkb-vs-kinesis-advantage">HHKB vs Kinesis Advantage</a> <span>Favors Kinesis Advantage</span>', h)
+        self.assertIn('<link rel="canonical" href="https://hn.shellbear.me/vs">', h)
+        self.assertNotIn('aria-current="page">All categories', h)
     def test_vs_key_is_the_same_either_way(self):
         self.assertEqual(R.vs_key('b', 'a'), R.vs_key('a', 'b'))
     def test_product_page_links_its_comparisons(self):

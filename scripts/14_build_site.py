@@ -333,7 +333,7 @@ def stamp(path,content,seed):
     h=hashlib.sha1(re.sub(r'<[^>]*>|\s+','',content).encode()).hexdigest()[:16];prev=old.get(path)
     day=prev[1] if prev and prev[0]==h else TODAY if prev or not seed else min(seed,TODAY)
     changed[path]=[h,day];return day
-site=SR.Site(cats,tags,cover,index,stamp=stamp,through=THROUGH)
+site=SR.Site(cats,tags,cover,index,stamp=stamp,through=THROUGH,comparisons=len(versus))
 ranked=sorted((p for p in index if p['own']>=3 and not p['bo'] and not p.get('pk') and not p.get('mx')),key=lambda p:(-p['w'],-p['own']))
 paths=['/']
 write('site/index.html',site.list_page(ranked))
@@ -348,8 +348,9 @@ for k in tags:
     if r: write(f'site/t/{SR.slug(k)}.html',site.list_page(r,tag=k));paths.append(SR.tag_path(k))
 for p in pages: write(f"site/p/{p['k']}.html",site.product_page(p))
 for v in versus: write(f"site/vs/{v['k']}.html",site.vs_page(v));paths.append(f"/vs/{v['k']}")
+if versus: write('site/vs.html',site.vs_index(versus));paths.append(SR.VS_INDEX)
 days={u:d for u,(_,d) in changed.items()}
-write('site/data/index.json',json.dumps(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL),through=THROUGH,upd={u:d for u,d in days.items() if not u.startswith('/p/')})),ensure_ascii=False))
+write('site/data/index.json',json.dumps(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL),through=THROUGH,vs=len(versus),upd={u:d for u,d in days.items() if not u.startswith('/p/')})),ensure_ascii=False))
 # Only the deploy records dates: a local build would otherwise date its changes to the day of a preview.
 if os.environ.get('CI'): write(LASTMOD,json.dumps(dict(sorted(changed.items())),separators=(',',':')).replace('],','],\n')+'\n')
 write('site/sitemap.xml',SR.sitemap(paths,index,TODAY,days))

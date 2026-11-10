@@ -318,6 +318,17 @@ def pick_pairs(mentions, parent, moved, category, limit=MAX_VS_PAGES, least=MIN_
     return out[:limit]
 
 
+VS_INDEX = "/vs"
+
+
+def lean_label(v):
+    """The verdict in a word or two, for lists: the favored product, or whether owners are split or even."""
+    winner, sentence = lean(v)
+    if winner is not None:
+        return f"{'Favors' if 'lean toward' in sentence else 'Slight edge:'} {(v['a'], v['b'])[winner]['n']}"
+    return "Split" if sentence.startswith("Owners are split") else "Even"
+
+
 def lean(v):
     """Which side the evidence favors. Comments naming both, the direction people switched and overall owner verdicts each
     count once, so one loud signal can't decide it alone. Returns 0 for a, 1 for b or None, and the sentence to show."""
@@ -432,19 +443,21 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 
 
 class Site:
-    def __init__(self, cats, tags, coverage, products=(), stamp=None, through=None):
+    def __init__(self, cats, tags, coverage, products=(), stamp=None, through=None, comparisons=0):
         """stamp(path, content, seed) returns the day a page's content last changed; through is the newest comment scanned."""
         self.cats, self.tags, self.coverage = cats, tags, coverage
-        self.stamp, self.through = stamp, through
+        self.stamp, self.through, self.comparisons = stamp, through, comparisons
         self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("pk") and not p.get("mx")]
         # Counted once: every page draws the same nav, and recounting per page was nearly all of the render time.
         self.cat_counts = collections.Counter(p["c"] for p in self.live)
         self.tag_counts = collections.Counter(t for p in self.live for t in p["tags"])
 
-    def _nav(self, cat=None, tag=None):
+    def _nav(self, cat=None, tag=None, path=None):
         count = lambda key: self.cat_counts[key]
         link = lambda href, label, n, cur: f'<a href="{e(href)}"{" aria-current=\"page\"" if cur else ""}>{e(label)} <span>{n}</span></a>'
-        out = [link("/", "All categories", len(self.live), not cat and not tag)]
+        out = [link("/", "All categories", len(self.live), path == "/")]
+        if self.comparisons:
+            out.append(link(VS_INDEX, "Comparisons", self.comparisons, path == VS_INDEX))
         for k, v in sorted(((k, v) for k, v in self.cats.items() if count(k)), key=lambda kv: -count(kv[0])):
             out.append(link(cat_path(k), v, count(k), k == cat))
         tagged = [(k, self.tag_counts[k]) for k in self.tags]
@@ -467,7 +480,7 @@ class Site:
 <link href="{FONTS}" rel="stylesheet">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="stylesheet" href="/style.css">{extra}</head>
 <body><header class="top"><a class="logo" href="/">HackerBuys</a><p class="tag">{e(TAGLINE)}</p></header>
-<div class="shell"><main id="main" tabindex="-1">{main}</main><nav id="cats" aria-label="Categories">{self._nav(cat, tag)}</nav></div>
+<div class="shell"><main id="main" tabindex="-1">{main}</main><nav id="cats" aria-label="Categories">{self._nav(cat, tag, path)}</nav></div>
 <footer><p id="foot">{e(self.coverage)}</p><p>Comments from <a href="https://news.ycombinator.com">Hacker News</a> via <a href="https://huggingface.co/datasets/open-index/hacker-news">open-index/hacker-news</a> (ODC-BY). Not affiliated with Y Combinator.</p><p>Made by <a href="https://shellbear.me">shellbear</a> · <a href="https://github.com/shellbear/hackerbuys">Source on GitHub</a></p></footer>
 <script src="/sort.js"></script><script src="/app.js"></script></body></html>
 """
@@ -635,6 +648,25 @@ class Site:
         data = dict(p, upd=updated) if updated else p
         extra = f'<script type="application/ld+json">{embed_json(crumbs)}</script>{page}<script type="application/json" id="product">{embed_json(data)}</script>'
         return self._page(title, desc, path, top + dates + rest, cat=p["c"], noindex=not indexable(p), extra=extra)
+
+    def vs_index(self, versus):
+        """Every comparison, grouped by category in nav order, best-supported first, with its verdict."""
+        groups = collections.defaultdict(list)
+        for v in versus:
+            groups[v["a"]["c"]].append(v)
+        order = sorted(groups, key=lambda c: (-self.cat_counts[c], c))
+        sections = "".join(
+            f'<h2 id="{e(slug(c))}">{e(self.cats.get(c, c))}</h2><ul class="moves">'
+            + "".join(f'<li><a href="/vs/{e(v["k"])}">{e(v["a"]["n"])} vs {e(v["b"]["n"])}</a> <span>{e(lean_label(v))}</span></li>' for v in groups[c])
+            + "</ul>" for c in order)
+        n = len(versus)
+        top = ", ".join(f"{v['a']['n']} vs {v['b']['n']}" for v in versus[:3])
+        title = "Product comparisons from Hacker News owners | HackerBuys"
+        desc = f"{n} head-to-head comparisons from Hacker News owners who weighed one product against another or switched between them. Top: {top}."[:MAX_DESCRIPTION]
+        main = (f'<h1>Comparisons</h1><p class="lede">Products Hacker News owners weigh against each other: in comments that name both, '
+                f'or by switching from one to the other. Each page sets the two side by side and quotes those comments.</p>{sections}')
+        dates, page, _ = self._dates(VS_INDEX, main, self.through, "", "CollectionPage")
+        return self._page(title, desc, VS_INDEX, main + dates, extra=page)
 
     def not_found(self):
         main = '<h1>Page not found</h1><p class="lede">That page isn’t in the catalogue. Products need at least two owners to get a page.</p><p><a href="/">Go to all categories</a></p>'
