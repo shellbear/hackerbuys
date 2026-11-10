@@ -11,8 +11,8 @@ import datetime as dt
 MAX_COMMENTS,MAX_TEXT,MIN_PAGE_OWNERS=30,1500,2
 MIN_MODEL_OWNERS,MAX_MODELS_LISTED=3,20
 QUEUE,OUT='data/extract/queue.parquet','extract/out'
-# Each page's content hash and the day it last changed. Committed with the site, and kept out of the deploy by site/.assetsignore.
-LASTMOD='site/.lastmod.json'
+# Each page's text hash and the day it last changed. Generated pages aren't committed, but this is, so dates survive between builds.
+LASTMOD='state/lastmod.json'
 RECALL_QUEUE,RECALL_OUT='data/extract/recall_queue.parquet','extract/recall'
 R='analysis/run41k'
 text={};meta={}
@@ -351,7 +351,6 @@ for v in versus: write(f"site/vs/{v['k']}.html",site.vs_page(v));paths.append(f"
 days={u:d for u,(_,d) in changed.items()}
 json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL),through=THROUGH,upd={u:d for u,d in days.items() if not u.startswith('/p/')})),open('site/data/index.json','w'),ensure_ascii=False)
 write(LASTMOD,json.dumps(dict(sorted(changed.items())),separators=(',',':')).replace('],','],\n')+'\n')
-write('site/.assetsignore','.lastmod.json\n')
 write('site/sitemap.xml',SR.sitemap(paths,index,TODAY,days))
 write('site/robots.txt',SR.robots())
 write('site/llms.txt',SR.llms_txt({k:v for k,v in cats.items() if any(p['c']==k for p in ranked)},len(ranked)))

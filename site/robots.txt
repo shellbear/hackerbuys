@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://hn.shellbear.me/sitemap.xml

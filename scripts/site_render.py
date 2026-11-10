@@ -437,14 +437,17 @@ class Site:
         self.cats, self.tags, self.coverage = cats, tags, coverage
         self.stamp, self.through = stamp, through
         self.live = [p for p in products if p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("pk") and not p.get("mx")]
+        # Counted once: every page draws the same nav, and recounting per page was nearly all of the render time.
+        self.cat_counts = collections.Counter(p["c"] for p in self.live)
+        self.tag_counts = collections.Counter(t for p in self.live for t in p["tags"])
 
     def _nav(self, cat=None, tag=None):
-        count = lambda key: sum(p["c"] == key for p in self.live)
+        count = lambda key: self.cat_counts[key]
         link = lambda href, label, n, cur: f'<a href="{e(href)}"{" aria-current=\"page\"" if cur else ""}>{e(label)} <span>{n}</span></a>'
         out = [link("/", "All categories", len(self.live), not cat and not tag)]
         for k, v in sorted(((k, v) for k, v in self.cats.items() if count(k)), key=lambda kv: -count(kv[0])):
             out.append(link(cat_path(k), v, count(k), k == cat))
-        tagged = [(k, sum(k in p["tags"] for p in self.live)) for k in self.tags]
+        tagged = [(k, self.tag_counts[k]) for k in self.tags]
         for title, keep in (("Verdict tags", lambda k: k in QUAL), ("Smaller groups", lambda k: k not in QUAL)):
             rows = [(k, n) for k, n in tagged if n and keep(k)]
             if rows:

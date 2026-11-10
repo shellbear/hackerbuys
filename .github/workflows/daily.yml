@@ -1,4 +1,4 @@
-# Adds each new day of Hacker News comments and redeploys the site: pushing to main deploys to Cloudflare.
+# Adds each new day of Hacker News comments, then starts the Deploy workflow, which builds and publishes the site.
 # Needs the repository secret CLAUDE_CODE_OAUTH_TOKEN, created with `claude setup-token` on a machine logged in to the subscription.
 name: Daily update
 
@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write # to start the Deploy workflow
 
 concurrency:
   group: daily-update
@@ -40,9 +41,10 @@ jobs:
           LAG: ${{ inputs.lag || '2' }}
         run: uv run python scripts/31_daily.py --no-site --lag "$LAG"
 
-      - name: Commit the new data, rebuild the site on top of the latest main, push
+      - name: Commit the new data, push, deploy
         env:
           PUSH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git config user.name "github-actions[bot]"
@@ -52,13 +54,10 @@ jobs:
           if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
           git commit -q -m "Daily update $(ls corpus/daily | tail -1 | cut -c1-10)"
           git checkout -q -- extract/out/failed.log 2>/dev/null || true
-          # The data only adds files, so it rebases cleanly. The site is rebuilt after each rebase and folded into the same commit.
+          # The data only adds files, so it rebases cleanly.
           for attempt in 1 2 3; do
             git pull -q --rebase origin main
-            uv run python scripts/14_build_site.py
-            git add site
-            git commit -q --amend --no-edit
-            git push -q origin HEAD:main && exit 0
-            git reset -q --hard "HEAD@{1}" # back to the data-only commit, then retry on the newer main
+            # A push made with this token doesn't start other workflows, so the deploy is started explicitly.
+            git push -q origin HEAD:main && exec gh workflow run deploy.yml --ref main
           done
           exit 1

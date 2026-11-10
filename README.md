@@ -103,7 +103,7 @@ uv sync
 .venv/bin/python scripts/23_extract.py --adapter claude --model claude-haiku-5-5 --effort low --workers 16 --min-year 2022 --max-year 2022
 .venv/bin/python scripts/26_progress.py
 
-# Build the site (this also refreshes corpus/archive from the local queue), then preview it
+# Build the site into site/ (this also refreshes corpus/archive from the local queue), then preview it
 .venv/bin/python scripts/14_build_site.py
 npx wrangler dev
 
@@ -116,11 +116,13 @@ The Codex adapter re-reads your balance before each batch. It stops below `--flo
 
 The `claude` adapter runs Haiku through the Claude Code CLI on a logged-in subscription, with no tools, settings or MCP servers. Thinking can't be turned off there, so a batch takes about 75 seconds; use more workers. On the 400 labeled comments it reached 79% precision and 97% recall, against 88% and 80% for gpt-6-luna, so it keeps more borderline comments. Three failed batches in a row, for example at a usage limit, stop the run.
 
-Pushes to `main` deploy to Cloudflare Workers automatically.
+Pushes to `main` deploy to Cloudflare Workers through [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): it runs the tests, builds the site from the committed data in about 20 seconds, and runs `wrangler deploy`. Generated pages are not committed. It needs the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets.
+
+Each page's last-changed date lives in `state/lastmod.json`, which the deploy commits back. A page's date only moves when its text changes, so this file is the build's only memory; don't commit a copy from a local build over it.
 
 ### Daily updates
 
-[`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs [`scripts/31_daily.py`](scripts/31_daily.py) every morning. It fetches each finished day after the last one covered, queues it with [`scripts/30_daily_queue.py`](scripts/30_daily_queue.py), extracts it with Haiku, rebuilds the site and pushes, which deploys. It works from a plain checkout because everything the site needs is in `corpus/`:
+[`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs [`scripts/31_daily.py`](scripts/31_daily.py) every morning. It fetches each finished day after the last one covered, queues it with [`scripts/30_daily_queue.py`](scripts/30_daily_queue.py), extracts it with Haiku, pushes the new data, and starts the deploy. It works from a plain checkout because everything the site needs is in `corpus/`:
 
 - `corpus/archive/<month>.parquet`: text and details of the comments already processed from the full local queue
 - `corpus/totals.json`: candidates per year in the full queue, and its last day
@@ -134,7 +136,8 @@ The 15 GB archive and `data/extract/queue.parquet` stay local and are only neede
 
 ```text
 scripts/    filter, queue, extraction and site build
-site/       the published site: generated pages plus app.js, sort.js and style.css
+site/       app.js, sort.js, style.css and icons; the build writes the pages here
+state/      each page's last-changed date, kept between builds
 extract/    extraction results, one JSON file per batch
 corpus/     comment text for the site build and the daily queues
 analysis/   feasibility report, evaluation sets and labels
