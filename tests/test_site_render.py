@@ -468,4 +468,58 @@ class Readable(unittest.TestCase):
         self.assertLess(h.index('<main'), h.index('<nav id="cats"'))
 
 
+def mention(cid, stance='positive'):
+    return dict(id=cid, stance=stance)
+
+class Versus(unittest.TestCase):
+    V = dict(k='hhkb-vs-kinesis-advantage', a=dict(E, k='hhkb', n='HHKB', w=.6, lt='2026-10-01'), b=dict(E, lt='2026-11-01'),
+             both=5, fa=1, fb=4, ab=1, ba=0,
+             cs=[dict(id=7, by='bob', d='2026-11-01', t='HHKB is fine, Advantage is better', th='', root=None, sa='neutral', sb='recommend'),
+                 dict(id=8, by='cy', d='2026-10-01', t='Moved on', th='', root=None, sw=0, sb='positive')])
+    def test_pairs_need_enough_evidence(self):
+        men = {'a': [mention(1), mention(2)], 'b': [mention(1), mention(2)], 'c': [mention(1)]}
+        self.assertEqual([r[:2] for r in R.pick_pairs(men, {}, {}, {}, least=2)], [('a', 'b')])
+    def test_switches_count_as_evidence(self):
+        men = {'a': [mention(1)], 'b': [mention(2)]}
+        pairs = R.pick_pairs(men, {}, {'a': {'b': {'u1', 'u2'}}, 'b': {'a': {'u3'}}}, {}, least=3)
+        self.assertEqual([(a, b, len(ab), len(ba)) for a, b, _, ab, ba in pairs], [('a', 'b', 2, 1)])
+    def test_line_is_not_compared_with_its_own_model(self):
+        men = {'mba': [mention(1), mention(2)], 'mba-m1': [mention(1), mention(2)], 'mba-m2': [mention(1), mention(2)]}
+        pairs = [r[:2] for r in R.pick_pairs(men, {'mba-m1': 'mba', 'mba-m2': 'mba'}, {}, {}, least=2)]
+        self.assertEqual(pairs, [('mba-m1', 'mba-m2')])
+    def test_comment_listing_many_products_is_not_a_comparison(self):
+        men = {k: [mention(1), mention(2)] for k in 'abcdefg'}
+        self.assertEqual(R.pick_pairs(men, {}, {}, {}, least=2), [])
+    def test_pairs_stay_within_a_category(self):
+        men = {'ipad': [mention(1), mention(2)], 'iphone': [mention(1), mention(2)]}
+        self.assertEqual(R.pick_pairs(men, {}, {}, {'ipad': 'tablets', 'iphone': 'phones'}, least=2), [])
+    def test_one_mention_under_two_pages_compares_nothing(self):
+        x, y = mention(1), mention(2)
+        men = {'ryzen-7': [x, y], 'ryzen-5800x3d': [x, y]}
+        self.assertEqual(R.pick_pairs(men, {}, {}, {}, least=2), [])
+    def test_line_is_not_compared_with_its_sub_line(self):
+        men = {'apple-macbook': [mention(1), mention(2)], 'apple-macbook-pro': [mention(1), mention(2)]}
+        self.assertEqual(R.pick_pairs(men, {}, {}, {}, least=2), [])
+    def test_lean_needs_agreeing_signals(self):
+        self.assertEqual(R.lean(self.V)[0], 1)
+        self.assertIn('lean toward the Kinesis Advantage', R.lean(self.V)[1])
+        split = dict(self.V, a=dict(self.V['a'], w=.95))
+        self.assertIsNone(R.lean(split)[0])
+        even = dict(self.V, fa=0, fb=0, a=dict(self.V['a'], w=E['w']))
+        self.assertEqual(R.lean(even), (None, 'No clear winner: owners rate them about the same.'))
+    def test_page_shows_both_sides_and_links_each(self):
+        h = SITE.vs_page(self.V)
+        self.assertIn('<h1>HHKB vs Kinesis Advantage</h1>', h)
+        self.assertIn('href="/p/hhkb"', h)
+        self.assertIn('<th class="won"><a href="/p/kinesis-advantage">', h)
+        self.assertIn('5 comments name both: 1 favor the HHKB, 4 the Kinesis Advantage.', h)
+        self.assertIn('1 owner moved from the HHKB to the Kinesis Advantage, 0 the other way.', h)
+        self.assertIn('Switched from the HHKB to the Kinesis Advantage', h)
+        self.assertIn('<link rel="canonical" href="https://hn.shellbear.me/vs/hhkb-vs-kinesis-advantage">', h)
+    def test_vs_key_is_the_same_either_way(self):
+        self.assertEqual(R.vs_key('b', 'a'), R.vs_key('a', 'b'))
+    def test_product_page_links_its_comparisons(self):
+        self.assertIn('<a href="/vs/hhkb-vs-kinesis-advantage">vs HHKB</a>', SITE.product_page(dict(E, vs=[['HHKB', 'hhkb-vs-kinesis-advantage', 5]])))
+
+
 if __name__ == '__main__': unittest.main()

@@ -1,5 +1,5 @@
 """Render real HTML pages for the site: content is in the page, and site/app.js adds sorting and filters on top."""
-import collections
+import collections, itertools
 import html, json, re
 
 ORIGIN = "https://hn.shellbear.me"
@@ -270,6 +270,81 @@ def line_for(brand, line, category):
     return line
 
 
+MAX_VS_PAGES = 400
+MIN_VS_EVIDENCE = 4
+CROWDED_COMMENT = 6
+SCORE = {"recommend": 1, "positive": 1, "neutral": 0, "negative": -1}
+
+
+def vs_key(a, b):
+    a, b = sorted((a, b))
+    return f"{a}-vs-{b}"
+
+
+def _family(a, b):
+    """A line and its own models or sub-lines: MacBook and MacBook Pro are one family, not a choice between two products."""
+    return a.startswith(b + "-") or b.startswith(a + "-")
+
+
+def pick_pairs(mentions, parent, moved, category, limit=MAX_VS_PAGES, least=MIN_VS_EVIDENCE):
+    """Pairs of pages that owners actually weigh against each other: comments naming both, and owners who switched between them.
+    mentions maps a page key to its mentions, parent a model page to its line, category a page to its category. Both must be
+    the same kind of thing, and named separately: one mention filed under a line and its model compares nothing. A comment
+    that names many products is a list, not a comparison. Returns (a, b, comment ids, users a→b, users b→a)."""
+    top = lambda k: parent.get(k) or k
+    said = collections.defaultdict(lambda: collections.defaultdict(set))
+    for k, xs in mentions.items():
+        for x in xs:
+            said[x["id"]][k].add(id(x))
+    rival = lambda a, b: a != b and category.get(a) == category.get(b) and top(a) != b and top(b) != a and not _family(a, b)
+    both = collections.defaultdict(set)
+    for cid, by_page in said.items():
+        if len(by_page) < 2 or len({top(k) for k in by_page}) > CROWDED_COMMENT:
+            continue
+        for a, b in itertools.combinations(sorted(by_page), 2):
+            if rival(a, b) and by_page[a] != by_page[b]:
+                both[(a, b)].add(cid)
+    pairs = set(both)
+    for f, tos in moved.items():
+        for t in tos:
+            if f in mentions and t in mentions and rival(f, t):
+                pairs.add(tuple(sorted((f, t))))
+    out = []
+    for a, b in pairs:
+        ab, ba = moved.get(a, {}).get(b, set()), moved.get(b, {}).get(a, set())
+        if len(both[(a, b)]) + len(ab) + len(ba) >= least:
+            out.append((a, b, both[(a, b)], ab, ba))
+    out.sort(key=lambda r: (-(len(r[2]) + len(r[3]) + len(r[4])), r[0], r[1]))
+    return out[:limit]
+
+
+def lean(v):
+    """Which side the evidence favors. Comments naming both, the direction people switched and overall owner verdicts each
+    count once, so one loud signal can't decide it alone. Returns 0 for a, 1 for b or None, and the sentence to show."""
+    a, b = v["a"]["n"], v["b"]["n"]
+    votes = [0, 0]
+    if v["fa"] >= 3 and v["fa"] >= 2 * v["fb"]:
+        votes[0] += 1
+    elif v["fb"] >= 3 and v["fb"] >= 2 * v["fa"]:
+        votes[1] += 1
+    if v["ba"] >= 3 and v["ba"] >= 2 * v["ab"]:
+        votes[0] += 1
+    elif v["ab"] >= 3 and v["ab"] >= 2 * v["ba"]:
+        votes[1] += 1
+    if v["a"]["w"] - v["b"]["w"] >= 0.05:
+        votes[0] += 1
+    elif v["b"]["w"] - v["a"]["w"] >= 0.05:
+        votes[1] += 1
+    if votes[0] and votes[1]:
+        return None, "Owners are split: the signals below point different ways."
+    for i, name in ((0, a), (1, b)):
+        if votes[i] >= 2:
+            return i, f"Hacker News owners lean toward the {name}."
+        if votes[i] == 1:
+            return i, f"Hacker News owners slightly favor the {name}."
+    return None, "No clear winner: owners rate them about the same."
+
+
 def indexable(p):
     """Fewer, stronger pages: a brand with no product line, or a page with a handful of verdicts, says too little to rank."""
     return p["own"] >= MIN_INDEX_OWNERS and not p["bo"] and not p.get("nl") and p["pos"] + p["neg"] >= MIN_INDEX_VERDICTS
@@ -347,6 +422,7 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 
 - [Sitemap of all product and category pages]({ORIGIN}/sitemap.xml)
 - [Full catalogue as JSON]({ORIGIN}/data/index.json): for each product, k is the page at /p/k, n the name, c the category, own the distinct owners, pos, neu and neg the verdicts, and ly the last year mentioned.
+- Comparison pages at /vs/<a>-vs-<b>, for pairs owners weigh against each other: linked from each product page under "Compared with".
 - [Source code and methods](https://github.com/shellbear/hackerbuys)
 
 ## Categories
@@ -465,8 +541,64 @@ class Site:
             bits.append("<span>Still going</span>")
         if not c.get("fh"):
             bits.append("<span>Doesn’t say they own it</span>")
+        return self._article(c, cl, bits)
+
+    def _article(self, c, cl, bits):
         thread = f' <a href="https://news.ycombinator.com/item?id={e(c["root"])}" rel="noopener">in “{e(c["th"])}”</a>' if c.get("th") and c.get("root") else ""
         return f'<article class="c {cl}"><header>{"".join(bits)}</header><blockquote>{e(c["t"])}</blockquote><footer><a href="https://news.ycombinator.com/item?id={e(c["id"])}" rel="noopener">{e(c["by"])}, {e(c["d"])}</a>{thread}</footer></article>'
+
+    def _vs_comment(self, c, a, b):
+        """A comment on a comparison page: the switch it describes, and its verdict on each product it names."""
+        bits = []
+        if "sw" in c:
+            moved = (a, b) if c["sw"] == 0 else (b, a)
+            bits.append(f"<strong>Switched from the {e(moved[0])} to the {e(moved[1])}</strong>")
+        for key, name in (("sa", a), ("sb", b)):
+            if key in c:
+                bits.append(f"<span>{e(name)}: {e(STANCE.get(c[key], c[key]))}</span>")
+        return self._article(c, "", bits)
+
+    def vs_page(self, v):
+        """Two products side by side, with the comments where owners weigh one against the other."""
+        a, b = v["a"], v["b"]
+        winner, verdict = lean(v)
+        path = f"/vs/{v['k']}"
+        title = f"{a['n']} vs {b['n']}: what Hacker News owners say | HackerBuys"
+        facts = []
+        if v["both"]:
+            rest = v["both"] - v["fa"] - v["fb"]
+            facts.append(f"{v['both']} {'comment names' if v['both'] == 1 else 'comments name'} both: {v['fa']} favor the {a['n']}, {v['fb']} the {b['n']}"
+                         + (f", and {rest} rate them alike." if rest else "."))
+        if v["ab"] or v["ba"]:
+            facts.append(f"{v['ab']} {'owner' if v['ab'] == 1 else 'owners'} moved from the {a['n']} to the {b['n']}, {v['ba']} the other way.")
+        verdicts = lambda p: f"{happy_pct(p)} of {p['pos'] + p['neg']}"
+        facts.append(f"Overall, {verdicts(a)} verdicts on the {a['n']} are positive, against {verdicts(b)} on the {b['n']}.")
+        desc = f"{a['n']} or {b['n']}? {verdict}"
+        for extra in (facts[0], "Every opinion links to its Hacker News comment."):
+            if len(f"{desc} {extra}") <= MAX_DESCRIPTION:
+                desc = f"{desc} {extra}"
+        aspects = lambda xs: e(_aspects(xs)) if xs else "–"
+        rows = [("Owners with an opinion", lambda p: e(p["own"])), ("Positive verdicts", lambda p: e(verdicts(p))),
+                ("Positive/negative since 2024", lambda p: e(f"{p['rpos']}/{p['rneg']}")), ("Happy after 3+ years", lambda p: e(p["lh"])),
+                ("Longest happy owner", lambda p: e(f"{p['maxt']} yrs") if p.get("maxt") else "–"),
+                ("Praised for", lambda p: aspects(p.get("pr"))), ("Criticized for", lambda p: aspects(p.get("co"))),
+                ("Newest comment", lambda p: _time(p["lt"]) if p.get("lt") else "–")]
+        name = lambda i, p: f'<th{" class=\"won\"" if winner == i else ""}><a href="/p/{e(p["k"])}">{e(p["n"])}</a></th>'
+        table = (f'<table class="vs"><thead><tr><th></th>{name(0, a)}{name(1, b)}</tr></thead><tbody>'
+                 + "".join(f"<tr><td>{label}</td><td>{f(a)}</td><td>{f(b)}</td></tr>" for label, f in rows) + "</tbody></table>")
+        cats = [a["c"]] if a["c"] == b["c"] else [a["c"], b["c"]]
+        crumb = " · ".join(f'<a href="{e(cat_path(c))}">{e(self.cats.get(c, c))}</a>' for c in cats)
+        top = (f'<p class="crumb">{crumb}</p><h1>{e(a["n"])} vs {e(b["n"])}</h1><p class="lede">{e(verdict)}</p>'
+               f'<ul class="facts">{"".join(f"<li>{e(x)}</li>" for x in facts)}</ul>{table}')
+        rest = f'<h2>What owners wrote about both</h2><div id="comments">{"".join(self._vs_comment(c, a["n"], b["n"]) for c in v["cs"])}</div>' if v["cs"] else ""
+        newest = max((c["d"] for c in v["cs"]), default=None)
+        # Just the updated day: the table already gives each product's newest comment.
+        dates, page, _ = self._dates(path, top + rest, newest, "", "WebPage")
+        crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": self.cats.get(cats[0], cats[0]), "item": ORIGIN + cat_path(cats[0])},
+            {"@type": "ListItem", "position": 2, "name": f"{a['n']} vs {b['n']}", "item": ORIGIN + path}]}
+        extra = f'<script type="application/ld+json">{embed_json(crumbs)}</script>{page}'
+        return self._page(title, desc, path, top + dates + rest, cat=cats[0] if len(cats) == 1 else None, extra=extra)
 
     def product_page(self, p):
         cat = self.cats.get(p["c"], p["c"])
@@ -484,12 +616,14 @@ class Site:
         to = f'<div><p class="note">Left this for</p><ul class="moves">{moves(p["to"])}</ul></div>' if p["to"] else ""
         fr = f'<div><p class="note">Came here from</p><ul class="moves">{moves(p["fr"])}</ul></div>' if p["fr"] else ""
         moved = f'<h2>Where people moved</h2><div class="two">{to}{fr}</div>' if to or fr else ""
+        versus = "".join(f'<li><a href="/vs/{e(k)}">vs {e(n)}</a></li>' for n, k, _ in p.get("vs") or [])
+        versus = f'<h2>Compared with</h2><ul class="moves">{versus}</ul>' if versus else ""
         reasons = f'<p class="note">{e(_reasons(p))}</p>' if _reasons(p) else ""
         parent = f' · <a href="/p/{e(p["pk"])}">{e(p.get("pn") or "All models")}</a>' if p.get("pk") else ""
         models = "".join(f'<li><a href="/p/{e(k)}">{e(n)}</a> <span>{e(c)}</span></li>' for n, k, c in p.get("models") or [])
         models = f'<h2>Models</h2><ul class="moves">{models}</ul>' if models else ""
         top = f'<p class="crumb"><a href="{e(cat_path(p["c"]))}">{e(cat)}</a>{parent}</p><h1>{e(p["n"])}</h1>{whys}<div class="verdict">{stats}</div>{reasons}'
-        rest = f'{models}{moved}<h2>What people wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>'
+        rest = f'{models}{moved}{versus}<h2>What people wrote</h2><div id="comments">{"".join(self._comment(c) for c in p["cs"])}</div>'
         path = f"/p/{p['k']}"
         dates, page, updated = self._dates(path, top + rest, p.get("lt"), f"Newest comment {_time(p['lt'])}" if p.get("lt") else "", "WebPage")
         crumbs = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [

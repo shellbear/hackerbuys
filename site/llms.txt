@@ -8,6 +8,7 @@ Opinions and ownership were extracted by AI, so they can be wrong: check the lin
 
 - [Sitemap of all product and category pages](https://hn.shellbear.me/sitemap.xml)
 - [Full catalogue as JSON](https://hn.shellbear.me/data/index.json): for each product, k is the page at /p/k, n the name, c the category, own the distinct owners, pos, neu and neg the verdicts, and ly the last year mentioned.
+- Comparison pages at /vs/<a>-vs-<b>, for pairs owners weigh against each other: linked from each product page under "Compared with".
 - [Source code and methods](https://github.com/shellbear/hackerbuys)
 
 ## Categories

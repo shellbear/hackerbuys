@@ -65,6 +65,7 @@ function product(p){const m=$('#main');let f='all',sort='ten';const wrap=el('div
  reasonsLine(p),datesLine('Newest comment',p.lt,p.upd),
  p.models&&p.models.length?[el('h2',{},'Models'),el('ul',{class:'moves'},p.models.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),' ',el('span',{},String(c)))))]:null,
  p.to.length||p.fr.length?[el('h2',{},'Where people moved'),el('div',{class:'two'},p.to.length?el('div',{},el('p',{class:'note'},'Left this for'),el('ul',{class:'moves'},p.to.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),' ',el('span',{},String(c)))))):null,p.fr.length?el('div',{},el('p',{class:'note'},'Came here from'),el('ul',{class:'moves'},p.fr.map(([n,k2,c])=>el('li',{},el('a',{href:`/p/${k2}`},n),' ',el('span',{},String(c)))))):null)]:null,
+ p.vs&&p.vs.length?[el('h2',{},'Compared with'),el('ul',{class:'moves'},p.vs.map(([n,k2])=>el('li',{},el('a',{href:`/vs/${k2}`},`vs ${n}`))))]:null,
  el('h2',{},'What people wrote'),el('div',{class:'filters'},fb.map(x=>x[1]),sel),wrap].flat().filter(Boolean));draw()}
 // Matches the dates line the build writes into each page.
 function datesLine(lead,day,upd){const t=d=>el('time',{datetime:d},TableSort.dayLabel(d)),k=[];if(day)k.push(`${lead} `,t(day));if(upd)k.push(k.length?' · updated ':'Updated ',t(upd));return k.length?el('p',{class:'note',id:'dates'},k):null}

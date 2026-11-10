@@ -179,11 +179,12 @@ def gen_label(m):
         return g[:28]
     return ''
 moved=collections.defaultdict(lambda:collections.defaultdict(set))
+switched=collections.defaultdict(list) # (from, to): the mentions that say so
 for m in ms:
     pf=parse_free(m.get('switched_from'))
     if pf:
         k=norm_key(*pf)
-        if k in G and k!=m['key']: moved[k][m['key']].add(m['by']) 
+        if k in G and k!=m['key']: moved[k][m['key']].add(m['by']);switched[(k,m['key'])].append(m)
 LAST=2026
 YEARS=collections.Counter(int(x['time'][:4]) for x in meta.values())
 def rate(v,a,b):
@@ -218,6 +219,7 @@ GENERIC=set('apple dell lenovo ibm asus hp acer sony samsung logitech microsoft 
 index=[]
 PUB={k for k,v in G.items() if len({x['by'] for x in v if x['first_hand']})>=MIN_PAGE_OWNERS}
 pages=[]
+MEN={} # page key: its mentions, for the comparison pages
 def make(k,v,name=None,parent=None,parent_name=None):
     v=sorted(v,key=lambda x:x['time'])
     cat=SR.home_category(x['category'] for x in v) if not parent and not v[0]['cl'] else collections.Counter(x['category'] for x in v).most_common(1)[0][0]
@@ -260,7 +262,7 @@ def make(k,v,name=None,parent=None,parent_name=None):
     cs=L.pick_comments(cs,MAX_COMMENTS)
     aspect=lambda f:[t for t,_ in collections.Counter(w for x in v if x['first_hand'] for w in (x.get(f) or [])).most_common(3)]
     page=dict(e,gens=gl,to=to,fr=fr,cs=cs,why=why,pr=aspect('pros'),co=aspect('cons'),lt=v[-1]['time'][:10])
-    pages.append(page)
+    pages.append(page);MEN[k]=v
     return page
 parents={}
 groups=collections.defaultdict(list)
@@ -285,11 +287,39 @@ for (_,mk),xs in sorted(groups.items(),key=lambda kv:-len(kv[1])):
     page.setdefault('models',[]).append([kid['n'],kid['k'],kid['own']])
 for page in parents.values():
     if page.get('models'): page['models']=sorted(page['models'],key=lambda r:-r[2])[:MAX_MODELS_LISTED]
+# Comparison pages, only for pairs owners actually weigh against each other.
+MAX_VS_COMMENTS,MAX_VS_LINKS=20,8
+byk={p['k']:p for p in pages}
+live={k:MEN[k] for k,p in byk.items() if SR.indexable(p)}
+parent_of={k:p['pk'] for k,p in byk.items() if p.get('pk')}
+said={(k,x['id']):x for k,xs in live.items() for x in xs}
+def vs_comment(m,**extra):
+    return dict(id=m['id'],by=m['by'],d=m['time'],t=L.trim_text(text[m['id']]['text'],MAX_TEXT),th=m['title'] or '',root=m['root'],**extra)
+versus=[]
+for a,b,ids,ab,ba in SR.pick_pairs(live,parent_of,{f:{t:u for t,u in tos.items() if t in live} for f,tos in moved.items() if f in live},{k:byk[k]['c'] for k in live}):
+    cs={}
+    for cid in ids:
+        sa,sb=said[(a,cid)]['stance'],said[(b,cid)]['stance']
+        cs[cid]=vs_comment(said[(a,cid)],sa=sa,sb=sb)
+    for f,t in ((a,b),(b,a)):
+        for m in switched[(f,t)]:
+            if m['id'] not in cs: cs[m['id']]=vs_comment(m,sw=0 if f==a else 1,**{'sb' if t==b else 'sa':m['stance']})
+    fa=sum(SR.SCORE[c['sa']]>SR.SCORE[c['sb']] for c in cs.values() if 'sa' in c and 'sb' in c)
+    fb=sum(SR.SCORE[c['sb']]>SR.SCORE[c['sa']] for c in cs.values() if 'sa' in c and 'sb' in c)
+    # Comments that pick a side first, then switches, newest first within each.
+    group=lambda c:0 if 'sa' in c and 'sb' in c and c['sa']!=c['sb'] else 1 if 'sw' in c else 2
+    cs=sorted(sorted(cs.values(),key=lambda c:c['d'],reverse=True),key=group)[:MAX_VS_COMMENTS]
+    versus.append(dict(k=SR.vs_key(a,b),a=byk[a],b=byk[b],both=len(ids),ab=len(ab),ba=len(ba),fa=fa,fb=fb,cs=cs))
+links=collections.defaultdict(list)
+for v in versus:
+    for me,other in (('a','b'),('b','a')): links[v[me]['k']].append([v[other]['n'],v['k'],v['both']+v['ab']+v['ba']])
+for k,ls in links.items(): byk[k]['vs']=sorted(ls,key=lambda r:-r[2])[:MAX_VS_LINKS]
+print('comparison pages',len(versus))
 # Real HTML pages: the content is in the file, and app.js adds sorting and filters on top.
 def write(path,body):
     os.makedirs(os.path.dirname(path),exist_ok=True)
     with open(path,'w') as f: f.write(body)
-for d in ('site/data/p','site/p','site/c','site/t'): shutil.rmtree(d,ignore_errors=True)
+for d in ('site/data/p','site/p','site/c','site/t','site/vs'): shutil.rmtree(d,ignore_errors=True)
 span=None if not FULL else str(min(FULL)) if len(FULL)==1 else f"{min(FULL)} to {max(FULL)}"
 # Rounded down so a daily update does not rewrite every page footer.
 cover=f"Based on more than {len(meta)//10000*10000:,} comments"+(f": every comment matching our product filter from {span}, plus a sample of earlier years chosen to favor likely product opinions" if span else "")+". Counts are not totals for all of Hacker News. Opinions and ownership were extracted by AI and can be wrong, so every comment links to its source."
@@ -317,6 +347,7 @@ for k in tags:
     r=[p for p in ranked if k in p['tags']]
     if r: write(f'site/t/{SR.slug(k)}.html',site.list_page(r,tag=k));paths.append(SR.tag_path(k))
 for p in pages: write(f"site/p/{p['k']}.html",site.product_page(p))
+for v in versus: write(f"site/vs/{v['k']}.html",site.vs_page(v));paths.append(f"/vs/{v['k']}")
 days={u:d for u,(_,d) in changed.items()}
 json.dump(dict(products=index,sample=dict(mentions=len(ms),comments=len({m['id'] for m in ms}),scanned=len(meta),full=sorted(FULL),through=THROUGH,upd={u:d for u,d in days.items() if not u.startswith('/p/')})),open('site/data/index.json','w'),ensure_ascii=False)
 write(LASTMOD,json.dumps(dict(sorted(changed.items())),separators=(',',':')).replace('],','],\n')+'\n')
