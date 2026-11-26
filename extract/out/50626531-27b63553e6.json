@@ -1,0 +1,1 @@
+{"model": "claude-haiku-5-5", "effort": "low", "adapter": "claude", "prompt_version": "v4-2026-11-04", "batch_size": 5, "usage": {"input_tokens": 4039, "cached_input_tokens": 2749, "output_tokens": 321, "reasoning_output_tokens": 268}, "spent": 0.0, "seconds": 3.2, "attempt": 1, "ids": [50626531, 50628516, 50622801, 50625769, 50634605], "results": []}
